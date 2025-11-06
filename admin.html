@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Grievance Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <h2>🔧 Admin Dashboard</h2>
+    <button class="login" onclick="logout()">Logout</button>
+  </nav>
+
+  <div class="container">
+    <!-- Statistics Section -->
+    <h3>📊 Overview Statistics</h3>
+    <div class="stats-container">
+      <div class="stat-card blue">
+        <h4>Total Complaints</h4>
+        <div class="number" id="adminTotalComplaints">0</div>
+      </div>
+      <div class="stat-card orange">
+        <h4>Pending</h4>
+        <div class="number" id="adminPendingComplaints">0</div>
+      </div>
+      <div class="stat-card">
+        <h4>In Progress</h4>
+        <div class="number" id="adminInProgressComplaints">0</div>
+      </div>
+      <div class="stat-card green">
+        <h4>Resolved</h4>
+        <div class="number" id="adminResolvedComplaints">0</div>
+      </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <h3>📂 Category Breakdown</h3>
+    <div class="stats-container" id="categoryStats">
+      <!-- Will be populated dynamically -->
+    </div>
+
+    <!-- All Complaints Section -->
+    <h3>📋 All Complaints</h3>
+    
+    <div id="adminAlert"></div>
+
+    <!-- Search and Filter -->
+    <div class="filter-section">
+      <input 
+        type="text" 
+        id="adminSearchInput" 
+        placeholder="🔍 Search by title, ID, or description..." 
+        onkeyup="filterAdminComplaints()"
+      >
+      <select id="adminStatusFilter" onchange="filterAdminComplaints()">
+        <option value="">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Resolved">Resolved</option>
+      </select>
+      <select id="adminCategoryFilter" onchange="filterAdminComplaints()">
+        <option value="">All Categories</option>
+        <option value="Academic">Academic</option>
+        <option value="Hostel">Hostel</option>
+        <option value="Exam">Exam</option>
+        <option value="Infrastructure">Infrastructure</option>
+        <option value="Library">Library</option>
+        <option value="Canteen">Canteen</option>
+        <option value="Transport">Transport</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <div class="table-container">
+      <table id="adminTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="adminEmptyState" class="empty-state" style="display: none;">
+      <p style="font-size: 3rem;">📭</p>
+      <p>No complaints in the system yet.</p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>College Grievance Redressal Portal - Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1>🎓 College Grievance Portal</h1>
+      <p class="subtitle">Your Voice Matters - We're Here to Help</p>
+      
+      <h2>Login</h2>
+      
+      <div id="alertContainer"></div>
+      
+      <form id="loginForm" onsubmit="login(event)">
+        <input 
+          type="email" 
+          id="email" 
+          placeholder="Enter Email Address" 
+          required
+          autocomplete="email"
+        >
+        
+        <input 
+          type="text" 
+          id="enroll" 
+          placeholder="Enter Enrollment Number (Optional for Admin)"
+        >
+        
+        <input 
+          type="password" 
+          id="password" 
+          placeholder="Enter Password" 
+          required
+          autocomplete="current-password"
+        >
+        
+        <button type="submit">Login to Dashboard</button>
+      </form>
+      
+      <p class="note">
+        <strong>Demo Accounts:</strong><br>
+        👤 <strong>Student:</strong> student@gmail.com / 123<br>
+        🔧 <strong>Admin:</strong> admin@gmail.com / admin
+      </p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
