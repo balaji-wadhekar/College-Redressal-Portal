@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Users - Grievance Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="nav-brand">
+      <img src="mitlogo.png" alt="MIT Logo" class="nav-logo">
+      <div>
+        <h2>User Management - Admin Panel</h2>
+        <span class="college-name">MIT ART DESIGN AND TECHNOLOGICAL UNIVERSITY PUNE</span>
+      </div>
+    </div>
+    <div>
+      <button onclick="window.location.href='admin.html'" class="secondary">Back to Dashboard</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Statistics -->
+    <h3>👥 User Statistics</h3>
+    <div class="stats-container">
+      <div class="stat-card blue">
+        <div class="number" id="totalStudents">0</div>
+        <h4>Total Students</h4>
+      </div>
+    </div>
+
+    <!-- Add Single Student -->
+    <div class="form-section">
+      <h3>➕ Add Single Student</h3>
+      <div id="addStudentAlert"></div>
+      
+      <form id="addStudentForm" onsubmit="addStudent(event)">
+        <label for="enrollment" style="display: block; margin-top: 1rem; font-weight: 600; color: #333;">
+          Enrollment Number: <span style="color: red;">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="enrollment" 
+          placeholder="e.g., ADT25SOCBD089" 
+          required
+          style="text-transform: uppercase;"
+        >
+        
+        <label for="studentName" style="display: block; margin-top: 1rem; font-weight: 600; color: #333;">
+          Student Name: <span style="color: red;">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="studentName" 
+          placeholder="e.g., John Doe" 
+          required
+        >
+        
+        <button type="submit">Add Student</button>
+      </form>
+
+      <div id="newStudentCredentials" style="display: none; margin-top: 1.5rem; padding: 1rem; background: #d4edda; border-left: 4px solid #28a745; border-radius: 4px;">
+        <h4 style="color: #155724; margin-bottom: 0.5rem;">✅ Student Added Successfully!</h4>
+        <p style="color: #155724; margin: 0.3rem 0;"><strong>Enrollment/Username:</strong> <span id="newEnrollment"></span></p>
+        <p style="color: #155724; margin: 0.3rem 0;"><strong>Password:</strong> <span id="newPassword" style="font-family: monospace; background: #fff; padding: 0.2rem 0.5rem; border-radius: 3px;"></span></p>
+        <p style="color: #155724; margin-top: 0.8rem; font-size: 0.85rem;"><em>⚠️ Please save these credentials and share with the student. Password cannot be retrieved later!</em></p>
+        <button onclick="copyCredentials()" class="secondary" style="margin-top: 0.5rem;">Copy Credentials</button>
+      </div>
+    </div>
+
+    <!-- Bulk Upload -->
+    <div class="form-section">
+      <h3>📤 Bulk Upload Students (CSV)</h3>
+      <div id="bulkUploadAlert"></div>
+      
+      <p style="margin-bottom: 1rem; color: #666;">
+        Upload a CSV file with columns: <strong>enrollment</strong> and <strong>name</strong>
+      </p>
+      
+      <div style="margin-bottom: 1rem;">
+        <a href="#" onclick="downloadSampleCSV(); return false;" style="color: #003366; text-decoration: underline;">
+          📥 Download Sample CSV Template
+        </a>
+      </div>
+      
+      <form id="bulkUploadForm" onsubmit="bulkUpload(event)">
+        <input 
+          type="file" 
+          id="csvFile" 
+          accept=".csv"
+          required
+          style="margin-bottom: 1rem;"
+        >
+        
+        <button type="submit">Upload Students</button>
+      </form>
+
+      <div id="uploadResults" style="display: none; margin-top: 1.5rem;"></div>
+    </div>
+
+    <!-- All Students Table -->
+    <h3>📋 All Students</h3>
+    
+    <div class="filter-section">
+      <input 
+        type="text" 
+        id="searchStudents" 
+        placeholder="🔍 Search by enrollment or name..." 
+        onkeyup="filterStudents()"
+      >
+      <button onclick="loadStudents()" class="secondary">Refresh</button>
+    </div>
+
+    <div class="table-container">
+      <table id="studentsTable">
+        <thead>
+          <tr>
+            <th>Enrollment Number</th>
+            <th>Name</th>
+            <th>Username (Login)</th>
+            <th>Date Added</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="emptyStudentsState" class="empty-state" style="display: none;">
+      <p style="font-size: 3rem;">👥</p>
+      <h3 style="color: #666;">No Students Added</h3>
+      <p>Add students using the forms above.</p>
+    </div>
+  </div>
+
+  <script src="public/api.js"></script>
+  <script src="public/manage-users.js"></script>
+</body>
+</html>

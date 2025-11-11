@@ -8,40 +8,49 @@
 </head>
 <body>
   <nav>
-    <h2>🔧 Admin Dashboard</h2>
-    <button class="login" onclick="logout()">Logout</button>
+    <div class="nav-brand">
+      <img src="mitlogo.png" alt="MIT Logo" class="nav-logo">
+      <div>
+        <h2>Admin Dashboard - Grievance Portal</h2>
+        <span class="college-name">MIT ART DESIGN AND TECHNOLOGICAL UNIVERSITY PUNE</span>
+      </div>
+    </div>
+    <div>
+      <button onclick="window.location.href='manage-users.html'" class="secondary">Manage Users</button>
+      <button onclick="logout()">Logout</button>
+    </div>
   </nav>
 
   <div class="container">
     <!-- Statistics Section -->
-    <h3>📊 Overview Statistics</h3>
+    <h3>📊 System Statistics Overview</h3>
     <div class="stats-container">
       <div class="stat-card blue">
-        <h4>Total Complaints</h4>
         <div class="number" id="adminTotalComplaints">0</div>
+        <h4>Total</h4>
       </div>
       <div class="stat-card orange">
-        <h4>Pending</h4>
         <div class="number" id="adminPendingComplaints">0</div>
+        <h4>Pending</h4>
       </div>
       <div class="stat-card">
-        <h4>In Progress</h4>
         <div class="number" id="adminInProgressComplaints">0</div>
+        <h4>In Progress</h4>
       </div>
       <div class="stat-card green">
-        <h4>Resolved</h4>
         <div class="number" id="adminResolvedComplaints">0</div>
+        <h4>Resolved</h4>
       </div>
     </div>
 
     <!-- Category Breakdown -->
-    <h3>📂 Category Breakdown</h3>
+    <h3>📂 Category-wise Distribution</h3>
     <div class="stats-container" id="categoryStats">
       <!-- Will be populated dynamically -->
     </div>
 
     <!-- All Complaints Section -->
-    <h3>📋 All Complaints</h3>
+    <h3>📋 All Student Grievances</h3>
     
     <div id="adminAlert"></div>
 
@@ -50,7 +59,7 @@
       <input 
         type="text" 
         id="adminSearchInput" 
-        placeholder="🔍 Search by title, ID, or description..." 
+        placeholder="🔍 Search by ID, title, or description..." 
         onkeyup="filterAdminComplaints()"
       >
       <select id="adminStatusFilter" onchange="filterAdminComplaints()">
@@ -63,7 +72,7 @@
         <option value="">All Categories</option>
         <option value="Academic">Academic</option>
         <option value="Hostel">Hostel</option>
-        <option value="Exam">Exam</option>
+        <option value="Exam">Examination</option>
         <option value="Infrastructure">Infrastructure</option>
         <option value="Library">Library</option>
         <option value="Canteen">Canteen</option>
@@ -81,7 +90,7 @@
             <th>Category</th>
             <th>Description</th>
             <th>Status</th>
-            <th>Date</th>
+            <th>Date Submitted</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -91,10 +100,12 @@
 
     <div id="adminEmptyState" class="empty-state" style="display: none;">
       <p style="font-size: 3rem;">📭</p>
-      <p>No complaints in the system yet.</p>
+      <h3 style="color: #666;">No Grievances in System</h3>
+      <p>No student grievances have been submitted yet.</p>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="public/api.js"></script>
+  <script src="public/script.js"></script>
 </body>
 </html>

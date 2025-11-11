@@ -8,47 +8,47 @@
 </head>
 <body>
   <nav>
-    <h2>👤 Student Dashboard</h2>
-    <button class="login" onclick="logout()">Logout</button>
+    <div class="nav-brand">
+      <img src="mitlogo.png" alt="MIT Logo" class="nav-logo">
+      <div>
+        <h2>Student Grievance Portal</h2>
+        <span class="college-name">MIT ART DESIGN AND TECHNOLOGICAL UNIVERSITY PUNE</span>
+      </div>
+    </div>
+    <button onclick="logout()">Logout</button>
   </nav>
 
   <div class="container">
     <!-- Statistics Section -->
+    <h3>📊 Dashboard Overview</h3>
     <div class="stats-container">
       <div class="stat-card blue">
-        <h4>Total Complaints</h4>
         <div class="number" id="totalComplaints">0</div>
+        <h4>Total</h4>
       </div>
       <div class="stat-card orange">
-        <h4>Pending</h4>
         <div class="number" id="pendingComplaints">0</div>
+        <h4>Pending</h4>
       </div>
       <div class="stat-card green">
-        <h4>Resolved</h4>
         <div class="number" id="resolvedComplaints">0</div>
+        <h4>Resolved</h4>
       </div>
     </div>
 
     <!-- File New Complaint Section -->
     <div class="form-section">
-      <h3>📝 File a New Complaint</h3>
+      <h3>📝 Submit New Grievance</h3>
       
       <div id="complaintAlert"></div>
-      
-      <form id="complaintForm" onsubmit="submitComplaint(event)">
-        <input 
-          type="text" 
-          id="title" 
-          placeholder="Complaint Title (e.g., Hostel Water Supply Issue)" 
-          required
-          maxlength="100"
-        >
-        
+      <label for="category" style="display: block; margin-top: 1rem; font-weight: 600; color: #333;">
+          Category:
+        </label>
         <select id="category" required>
-          <option value="">Select Category</option>
+          <option value="">-- Select Category --</option>
           <option value="Academic">📚 Academic</option>
           <option value="Hostel">🏠 Hostel</option>
-          <option value="Exam">📝 Exam</option>
+          <option value="Exam">📝 Examination</option>
           <option value="Infrastructure">🏗️ Infrastructure</option>
           <option value="Library">📖 Library</option>
           <option value="Canteen">🍽️ Canteen</option>
@@ -56,26 +56,43 @@
           <option value="Other">📋 Other</option>
         </select>
         
+      <form id="complaintForm" onsubmit="submitComplaint(event)">
+        <label for="title" style="display: block; margin-top: 1rem; font-weight: 600; color: #333;">
+          Complaint Title:
+        </label>
+        <input 
+          type="text" 
+          id="title" 
+          placeholder="Brief title of your grievance" 
+          required
+          maxlength="100"
+        >
+        
+        
+        
+        <label for="description" style="display: block; margin-top: 1rem; font-weight: 600; color: #333;">
+          Description:
+        </label>
         <textarea 
           id="description" 
-          placeholder="Describe your grievance in detail..." 
+          placeholder="Please provide detailed description of your grievance..." 
           required
           maxlength="500"
         ></textarea>
         
-        <button class="submit_comaplaint" type="submit">Submit Complaint</button>
+        <button type="submit">Submit Grievance</button>
       </form>
     </div>
 
     <!-- My Complaints Section -->
-    <h3>📋 My Complaints</h3>
+    <h3>📋 My Submitted Grievances</h3>
     
     <!-- Search and Filter -->
     <div class="filter-section">
       <input 
         type="text" 
         id="searchInput" 
-        placeholder="🔍 Search complaints..." 
+        placeholder="🔍 Search by title, description..." 
         onkeyup="filterComplaints()"
       >
       <select id="statusFilter" onchange="filterComplaints()">
@@ -88,7 +105,7 @@
         <option value="">All Categories</option>
         <option value="Academic">Academic</option>
         <option value="Hostel">Hostel</option>
-        <option value="Exam">Exam</option>
+        <option value="Exam">Examination</option>
         <option value="Infrastructure">Infrastructure</option>
         <option value="Library">Library</option>
         <option value="Canteen">Canteen</option>
@@ -106,7 +123,7 @@
             <th>Category</th>
             <th>Description</th>
             <th>Status</th>
-            <th>Date</th>
+            <th>Date Submitted</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -116,10 +133,12 @@
 
     <div id="emptyState" class="empty-state" style="display: none;">
       <p style="font-size: 3rem;">📭</p>
-      <p>No complaints filed yet. File your first complaint above!</p>
+      <h3 style="color: #666;">No Grievances Submitted</h3>
+      <p>You haven't submitted any grievances yet. Use the form above to submit your first grievance.</p>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="public/api.js"></script>
+  <script src="public/script.js"></script>
 </body>
 </html>

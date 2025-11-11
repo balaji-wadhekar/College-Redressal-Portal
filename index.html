@@ -3,53 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>College Grievance Redressal Portal - Login</title>
+  <title>Student Grievance Portal - Login</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Add Font Awesome for eye icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
   <div class="login-container">
     <div class="login-box">
-      <h1>🎓 College Grievance Portal</h1>
-      <p class="subtitle">Your Voice Matters - We're Here to Help</p>
+      <div class="login-logo">
+        <img src="mitlogo.png" alt="College Logo">
+      </div>
       
-      <h2>Login</h2>
+      <h1>Student Grievance Portal</h1>
+      <p class="subtitle">MIT ART DESIGN AND TECHNOLOGICAL UNIVERSITY PUNE</p>
+      
+      <h2>Portal Login</h2>
       
       <div id="alertContainer"></div>
       
       <form id="loginForm" onsubmit="login(event)">
         <input 
-          type="email" 
-          id="email" 
-          placeholder="Enter Email Address" 
-          required
-          autocomplete="email"
-        >
-        
-        <input 
           type="text" 
-          id="enroll" 
-          placeholder="Enter Enrollment Number (Optional for Admin)"
-        >
-        
-        <input 
-          type="password" 
-          id="password" 
-          placeholder="Enter Password" 
+          id="email" 
+          placeholder="Enrollment Number" 
           required
-          autocomplete="current-password"
         >
         
-        <button type="submit">Login to Dashboard</button>
+        <div style="position: relative;">
+          <input 
+            type="password" 
+            id="password" 
+            placeholder="Password" 
+            required
+            style="width: 100%; padding-right: 40px;"
+          >
+          <i 
+            class="fa-solid fa-eye" 
+            id="togglePassword" 
+            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer;"
+          ></i>
+        </div>
+        
+        <button type="submit">Login to Portal</button>
       </form>
-      
-      <p class="note">
-        <strong>Demo Accounts:</strong><br>
-        👤 <strong>Student:</strong> student@gmail.com / 123<br>
-        🔧 <strong>Admin:</strong> admin@gmail.com / admin
-      </p>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    // Password show/hide toggle
+    const togglePassword = document.querySelector("#togglePassword");
+    const password = document.querySelector("#password");
+
+    togglePassword.addEventListener("click", function () {
+      const type = password.getAttribute("type") === "password" ? "text" : "password";
+      password.setAttribute("type", type);
+      this.classList.toggle("fa-eye-slash");
+    });
+  </script>
+
+  <script src="public/api.js"></script>
+  <script src="public/script.js"></script>
 </body>
 </html>
