@@ -1,68 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Grievance Portal - Login</title>
+  <title>College Grievance Portal - Login</title>
   <link rel="stylesheet" href="style.css">
   <!-- Add Font Awesome for eye icon -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
+
 <body>
   <div class="login-container">
     <div class="login-box">
       <div class="login-logo">
         <img src="mitlogo.png" alt="College Logo">
       </div>
-      
-      <h1>Student Grievance Portal</h1>
+
+      <h1>College Grievance Portal</h1>
       <p class="subtitle">MIT ART DESIGN AND TECHNOLOGICAL UNIVERSITY PUNE</p>
-      
+
       <h2>Portal Login</h2>
-      
+
       <div id="alertContainer"></div>
-      
+
+      <div class="login-tabs" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+        <button type="button" id="tabStudent" class="tab-btn active" onclick="switchTab('student')" style="background: #003366; color: white;">Student</button>
+        <button type="button" id="tabAdmin" class="tab-btn" onclick="switchTab('admin')" style="background: #e0e0e0; color: #333;">Admin</button>
+      </div>
+
       <form id="loginForm" onsubmit="login(event)">
-        <input 
-          type="text" 
-          id="email" 
-          placeholder="Enrollment Number" 
-          required
-        >
+        <input type="hidden" id="loginRole" value="student">
         
-        <div style="position: relative;">
-          <input 
-            type="password" 
-            id="password" 
-            placeholder="Password" 
-            required
-            style="width: 100%; padding-right: 40px;"
-          >
-          <i 
-            class="fa-solid fa-eye" 
-            id="togglePassword" 
-            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer;"
-          ></i>
+        <div id="studentFields">
+          <input type="text" id="name" name="name" placeholder="Full Name" required>
+          <div style="margin-bottom: 20px;">
+            <input type="text" id="enrollment" name="enrollmentNumber" placeholder="Enrollment Number" required style="width: 100%;">
+          </div>
         </div>
-        
-        <button type="submit">Login to Portal</button>
+
+        <div id="adminFields" style="display: none;">
+          <input type="email" id="email" name="email" placeholder="Email Address">
+          <div style="margin-bottom: 20px;">
+            <input type="password" id="password" name="password" placeholder="Password" style="width: 100%;">
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 1.5rem;">
+          <button type="submit" id="loginBtn" style="width: auto; padding: 0.8rem 2.5rem;">LOGIN TO PORTAL</button>
+        </div>
       </form>
     </div>
   </div>
 
   <script>
-    // Password show/hide toggle
-    const togglePassword = document.querySelector("#togglePassword");
-    const password = document.querySelector("#password");
+    function switchTab(role) {
+      document.getElementById('loginRole').value = role;
+      
+      const tabStudent = document.getElementById('tabStudent');
+      const tabAdmin = document.getElementById('tabAdmin');
+      const studentFields = document.getElementById('studentFields');
+      const adminFields = document.getElementById('adminFields');
+      
+      const name = document.getElementById('name');
+      const enrollment = document.getElementById('enrollment');
+      const email = document.getElementById('email');
+      const password = document.getElementById('password');
 
-    togglePassword.addEventListener("click", function () {
-      const type = password.getAttribute("type") === "password" ? "text" : "password";
-      password.setAttribute("type", type);
-      this.classList.toggle("fa-eye-slash");
-    });
+      if (role === 'student') {
+        tabStudent.style.background = '#003366';
+        tabStudent.style.color = 'white';
+        tabAdmin.style.background = '#e0e0e0';
+        tabAdmin.style.color = '#333';
+        
+        studentFields.style.display = 'block';
+        adminFields.style.display = 'none';
+        
+        name.required = true;
+        enrollment.required = true;
+        email.required = false;
+        password.required = false;
+      } else {
+        tabAdmin.style.background = '#003366';
+        tabAdmin.style.color = 'white';
+        tabStudent.style.background = '#e0e0e0';
+        tabStudent.style.color = '#333';
+        
+        studentFields.style.display = 'none';
+        adminFields.style.display = 'block';
+        
+        name.required = false;
+        enrollment.required = false;
+        email.required = true;
+        password.required = true;
+      }
+    }
   </script>
-
   <script src="public/api.js"></script>
   <script src="public/script.js"></script>
 </body>
+
 </html>

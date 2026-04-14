@@ -43,12 +43,15 @@ app.use(session({
 }));
 
 // Serve static files
+app.use(express.static('public'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname)));
 
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/complaints', require('./routes/complaints'));
 app.use('/api/users', require('./routes/users'));
+app.use('/admin', require('./routes/admin'));
 
 // Serve HTML pages
 app.get('/', (req, res) => {

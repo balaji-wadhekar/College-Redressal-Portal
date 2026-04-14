@@ -89,6 +89,7 @@ nav button:hover {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -113,7 +114,7 @@ nav button:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
+  background-image:
     linear-gradient(rgba(0, 51, 102, 0.9), rgba(0, 51, 102, 0.9)),
     url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="none" stroke="white" stroke-width="0.5" opacity="0.1"/></svg>');
   background-size: 50px 50px;
@@ -137,6 +138,7 @@ nav button:hover {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -181,7 +183,9 @@ nav button:hover {
 }
 
 /* Form Elements - Professional Style */
-input, select, textarea {
+input,
+select,
+textarea {
   width: 100%;
   padding: 0.9rem 1rem;
   margin: 0.6rem 0;
@@ -193,7 +197,9 @@ input, select, textarea {
   background: #fafafa;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
   outline: none;
   border-color: #003366;
   background: white;
@@ -273,7 +279,9 @@ button.success:hover {
 }
 
 /* Headings - Academic Style */
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   color: #003366;
   margin-bottom: 1rem;
   font-family: 'Georgia', serif;
@@ -499,6 +507,7 @@ td button {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -518,30 +527,119 @@ td button {
 }
 
 /* Form Section - College Style */
-.form-section {
-  background: #f8f9fa;
-  padding: 2rem;
-  border-radius: 6px;
+/* University Document Style Form */
+.univ-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.univ-section {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 2.5rem;
   margin-bottom: 2rem;
-  border-left: 5px solid #003366;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
-.form-section button[type="submit"],
-form button[type="submit"] {
-  width: auto !important;
-  padding: 0.6rem 1.5rem !important;
-  font-size: 0.85rem !important;
-  margin-top: 1rem;
-  display: inline-block !important;
-  text-align: center;
+.univ-header {
+  border-bottom: 2px solid #003366;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
 }
 
-.login-box button[type="submit"] {
-  width: 100% !important;
-  padding: 0.85rem 2rem !important;
-  font-size: 1rem !important;
-  display: block !important;
+.univ-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #003366;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  padding: 0;
+}
+
+.univ-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.univ-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.univ-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  margin-left: 0.2rem;
+}
+
+.univ-input,
+.univ-select,
+.univ-textarea {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  background-color: #fcfcfc;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.univ-input:focus,
+.univ-select:focus,
+.univ-textarea:focus {
+  background-color: #fff;
+  border-color: #003366;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 51, 102, 0.1);
+}
+
+.univ-textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.file-upload-block {
+  border: 2px dashed #ccc;
+  padding: 2rem;
   text-align: center;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+}
+
+.univ-btn-submit {
+  background: #003366;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 1rem 3rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  width: auto;
+  min-width: 200px;
+  display: block;
+  margin: 2rem auto 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.univ-btn-submit:hover {
+  background: #004d99;
+}
+
+@media (max-width: 600px) {
+  .univ-section {
+    padding: 1.5rem;
+  }
 }
 
 /* College Portal Header */
@@ -611,7 +709,8 @@ form button[type="submit"] {
     font-size: 0.85rem;
   }
 
-  th, td {
+  th,
+  td {
     padding: 0.7rem 0.5rem;
   }
 
@@ -642,12 +741,126 @@ form button[type="submit"] {
 
 /* Print Styles */
 @media print {
-  nav, button, .filter-section {
+
+  nav,
+  button,
+  .filter-section {
     display: none;
   }
-  
+
   .container {
     box-shadow: none;
     border: 1px solid #ddd;
+  }
+}
+
+/* Compact Form Layout */
+.compact-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: end;
+}
+
+.compact-form-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.compact-form-grid label {
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.compact-form-grid input,
+.compact-form-grid select,
+.compact-form-grid textarea {
+  margin: 0;
+  padding: 0.6rem;
+}
+
+.compact-form-grid textarea {
+  min-height: 80px;
+  /* Reduced height */
+}
+
+.compact-form-grid button {
+  margin-top: 1rem;
+  justify-self: start;
+  width: 100%;
+}
+
+@media (min-width: 601px) {
+  .compact-form-grid button {
+    width: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .compact-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Supporting Documents & Solution Section */
+.support-section-title {
+  color: #003366;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e0e0e0;
+  font-family: 'Georgia', serif;
+}
+
+.support-cards-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.ui-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.ui-card:hover {
+  border-color: #b0c4de;
+  box-shadow: 0 4px 8px rgba(0, 51, 102, 0.08);
+}
+
+.ui-card h4 {
+  color: #003366;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  border-left: 3px solid #FFD700;
+  /* Gold accent */
+  padding-left: 0.5rem;
+}
+
+.file-upload-wrapper {
+  margin-top: 0.5rem;
+}
+
+.helper-text {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.4rem;
+  display: block;
+}
+
+.full-width-card {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 700px) {
+  .support-cards-container {
+    grid-template-columns: 1fr;
   }
 }

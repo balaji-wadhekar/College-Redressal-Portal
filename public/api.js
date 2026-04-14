@@ -4,12 +4,12 @@ const API_BASE_URL = 'http://localhost:3000/api';
 // API Helper Functions
 const api = {
   // Authentication
-  async login(email, password) {
+  async login(payload) {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify(payload)
     });
     return await response.json();
   },
@@ -39,6 +39,17 @@ const api = {
     return await response.json();
   },
 
+  // Profile
+  async updateProfile(department) {
+    const response = await fetch(`${API_BASE_URL}/users/profile/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ department })
+    });
+    return await response.json();
+  },
+
   // Complaints
   async getComplaints() {
     const response = await fetch(`${API_BASE_URL}/complaints`, {
@@ -54,12 +65,11 @@ const api = {
     return await response.json();
   },
 
-  async createComplaint(title, category, description) {
+  async createComplaint(formData) {
     const response = await fetch(`${API_BASE_URL}/complaints`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ title, category, description })
+      body: formData // allow browser to set Content-Type with boundary
     });
     return await response.json();
   },

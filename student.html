@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Dashboard - Grievance Portal</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <nav>
     <div class="nav-brand">
@@ -35,66 +37,157 @@
         <h4>Resolved</h4>
       </div>
     </div>
-
-    <!-- File New Complaint Section -->
-    <div class="form-section">
-      <h3>📝 Submit New Grievance</h3>
-      
+    <!-- File New Complaint Section - University Document Style -->
+    <div class="univ-container">
       <div id="complaintAlert"></div>
-      <label for="category" style="display: block; margin-top: 1rem; font-weight: 600; color: #333;">
-          Category:
-        </label>
-        <select id="category" required>
-          <option value="">-- Select Category --</option>
-          <option value="Academic">📚 Academic</option>
-          <option value="Hostel">🏠 Hostel</option>
-          <option value="Exam">📝 Examination</option>
-          <option value="Infrastructure">🏗️ Infrastructure</option>
-          <option value="Library">📖 Library</option>
-          <option value="Canteen">🍽️ Canteen</option>
-          <option value="Transport">🚌 Transport</option>
-          <option value="Other">📋 Other</option>
-        </select>
-        
-      <form id="complaintForm" onsubmit="submitComplaint(event)">
-        <label for="title" style="display: block; margin-top: 1rem; font-weight: 600; color: #333;">
-          Complaint Title:
-        </label>
-        <input 
-          type="text" 
-          id="title" 
-          placeholder="Brief title of your grievance" 
-          required
-          maxlength="100"
-        >
-        
-        
-        
-        <label for="description" style="display: block; margin-top: 1rem; font-weight: 600; color: #333;">
-          Description:
-        </label>
-        <textarea 
-          id="description" 
-          placeholder="Please provide detailed description of your grievance..." 
-          required
-          maxlength="500"
-        ></textarea>
-        
-        <button type="submit">Submit Grievance</button>
+
+      <form id="complaintForm" onsubmit="event.preventDefault(); submitComplaint(event)">
+
+        <!-- SECTION 1: PERSONAL INFORMATION -->
+        <div class="univ-section">
+          <div class="univ-header">
+            <h3>👤 Personal Information</h3>
+          </div>
+
+          <div class="univ-group-row">
+            <div class="univ-form-group half">
+              <label class="univ-label">Full Name <span class="read-only-tag">(Read Only)</span></label>
+              <input type="text" id="studentName" class="univ-input" readonly style="background-color: #f8f9fa;">
+            </div>
+            <div class="univ-form-group half">
+              <label class="univ-label">Enrollment No. <span class="read-only-tag">(Read Only)</span></label>
+              <input type="text" id="studentEnrollment" class="univ-input" readonly style="background-color: #f8f9fa;">
+            </div>
+          </div>
+
+          <div class="univ-group-row">
+            <div class="univ-form-group half">
+              <label class="univ-label" for="studentEmail">Email Address</label>
+              <input type="email" id="studentEmail" class="univ-input" placeholder="Enter your email" required>
+            </div>
+            <div class="univ-form-group half">
+              <label class="univ-label" for="studentPhone">Phone Number</label>
+              <input type="tel" id="studentPhone" class="univ-input" placeholder="Enter 10-digit number"
+                pattern="[0-9]{10}" required>
+            </div>
+          </div>
+
+          <div class="univ-form-group">
+            <label class="univ-label" for="studentDept">Department</label>
+            <select id="studentDept" class="univ-select" required>
+                <option value="">-- Select Official Department --</option>
+                <option value="MIT School of Engineering and Science">MIT School of Engineering and Science</option>
+                <option value="MIT School of Computing">MIT School of Computing</option>
+                <option value="MIT School of Bioengineering Sciences and Research">MIT School of Bioengineering Sciences and Research</option>
+                <option value="MIT College of Management">MIT College of Management</option>
+                <option value="MIT School of Film & Theatre">MIT School of Film & Theatre</option>
+                <option value="MIT School of Fine Arts">MIT School of Fine Arts</option>
+                <option value="MIT School of Architecture">MIT School of Architecture</option>
+                <option value="MIT School of Education & Research">MIT School of Education & Research</option>
+                <option value="MIT School of Humanities">MIT School of Humanities</option>
+                <option value="MIT School of Vedic Sciences">MIT School of Vedic Sciences</option>
+                <option value="MIT School of Food Technology">MIT School of Food Technology</option>
+                <option value="MIT-VSKA (Sangeet Kala Academy)">MIT-VSKA (Sangeet Kala Academy)</option>
+                <option value="MIT-Indian Civil Services">MIT-Indian Civil Services</option>
+                <option value="MIT-Maharashtra Academy of Naval Education and Training">MIT-Maharashtra Academy of Naval Education and Training</option>
+                <option value="MIT-School of Law">MIT-School of Law</option>
+                <option value="HR">HR</option>
+                <option value="Admin">Admin</option>
+                <option value="Account">Account</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SECTION 2: GRIEVANCE INFORMATION -->
+        <div class="univ-section">
+          <div class="univ-header">
+            <h3>📝 Grievance Information</h3>
+          </div>
+
+          <div class="univ-form-group">
+            <label class="univ-label" for="title">Grievance Title</label>
+            <input type="text" id="title" class="univ-input" placeholder="Enter brief title" required maxlength="100">
+          </div>
+
+          <div class="univ-form-group">
+            <label class="univ-label" for="incidentDate">Incident Occurrence Date</label>
+            <input type="date" id="incidentDate" class="univ-input" required>
+          </div>
+
+          <div class="univ-form-group">
+            <label class="univ-label" for="category">Grievance Category</label>
+            <select id="category" class="univ-select" required>
+              <option value="">-- Select Category --</option>
+              <option value="General Grievance">General Grievance</option>
+              <option value="Hostel">Hostel</option>
+                <option value="Hostel Mess">Hostel Mess</option>
+              <option value="Sexual Harassment">Sexual Harassment</option>
+              <option value="Ragging">Ragging</option>
+              <option value="Admission">Admission</option>
+              <option value="Discrimination">Discrimination</option>
+              <option value="Faculty Related">Faculty Related</option>
+              <option value="Computer and Network">Computer and Network</option>
+              <option value="ERP">ERP</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Student Section">Student Section</option>
+              <option value="Administration and HR">Administration and HR</option>
+              <option value="Procurement and Inventory">Procurement and Inventory</option>
+              <option value="Accounts">Accounts</option>
+              <option value="Transport">Transport</option>
+              <option value="Library">Library</option>
+              <option value="Training and Placement">Training and Placement</option>
+              <option value="Student Grievance">Student Grievance</option>
+              <option value="RO Plant">RO Plant</option>
+              <option value="Other">Other</option>
+
+            </select>
+          </div>
+
+          <div class="univ-form-group">
+            <label class="univ-label" for="description">Grievance Summary</label>
+            <textarea id="description" class="univ-textarea" placeholder="Please provide detailed description..."
+              required maxlength="500"></textarea>
+          </div>
+        </div>
+
+        <!-- SECTION 2: DOCUMENT DETAILS -->
+        <div class="univ-section">
+          <div class="univ-header">
+            <h3>📄 Document Details</h3>
+          </div>
+
+          <div class="univ-form-group">
+            <label class="univ-label" for="docTitle">Document Title</label>
+            <input type="text" id="docTitle" class="univ-input" placeholder="e.g. Medical Certificate">
+          </div>
+
+          <div class="univ-form-group">
+            <label class="univ-label">Upload Document</label>
+            <div class="file-upload-block">
+              <input type="file" id="docFile" accept=".pdf,.doc,.docx,.jpg,.png">
+              <span class="helper-text" style="display:block; margin-top:0.5rem;">Max 5MB (pdf, doc, docx, jpg,
+                png)</span>
+            </div>
+          </div>
+
+          <div class="univ-form-group" style="margin-top: 1.5rem;">
+            <label class="univ-label" for="solutionText">Additional Notes / Expected Resolution</label>
+            <textarea id="solutionText" class="univ-textarea" style="min-height:100px;"
+              placeholder="Optional..."></textarea>
+          </div>
+
+          <button type="submit" class="univ-btn-submit">Submit Grievance</button>
+        </div>
+
       </form>
     </div>
 
     <!-- My Complaints Section -->
     <h3>📋 My Submitted Grievances</h3>
-    
+
     <!-- Search and Filter -->
     <div class="filter-section">
-      <input 
-        type="text" 
-        id="searchInput" 
-        placeholder="🔍 Search by title, description..." 
-        onkeyup="filterComplaints()"
-      >
+      <input type="text" id="searchInput" placeholder="🔍 Search by title, description..." onkeyup="filterComplaints()">
       <select id="statusFilter" onchange="filterComplaints()">
         <option value="">All Status</option>
         <option value="Pending">Pending</option>
@@ -120,6 +213,7 @@
           <tr>
             <th>ID</th>
             <th>Title</th>
+            <th>Incident Date</th>
             <th>Category</th>
             <th>Description</th>
             <th>Status</th>
@@ -141,4 +235,5 @@
   <script src="public/api.js"></script>
   <script src="public/script.js"></script>
 </body>
+
 </html>

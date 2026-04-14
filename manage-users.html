@@ -17,7 +17,7 @@
     </div>
     <div>
       <button onclick="window.location.href='admin.html'" class="secondary">Back to Dashboard</button>
-      <button onclick="logout()">Logout</button>
+     <!-- <button onclick="logout()">Logout</button>-->
     </div>
   </nav>
 
@@ -31,73 +31,20 @@
       </div>
     </div>
 
-    <!-- Add Single Student -->
+    <!-- Document Upload -->
     <div class="form-section">
-      <h3>➕ Add Single Student</h3>
-      <div id="addStudentAlert"></div>
+      <h3>📄 Upload Student Master Document</h3>
       
-      <form id="addStudentForm" onsubmit="addStudent(event)">
-        <label for="enrollment" style="display: block; margin-top: 1rem; font-weight: 600; color: #333;">
-          Enrollment Number: <span style="color: red;">*</span>
-        </label>
-        <input 
-          type="text" 
-          id="enrollment" 
-          placeholder="e.g., ADT25SOCBD089" 
-          required
-          style="text-transform: uppercase;"
-        >
-        
-        <label for="studentName" style="display: block; margin-top: 1rem; font-weight: 600; color: #333;">
-          Student Name: <span style="color: red;">*</span>
-        </label>
-        <input 
-          type="text" 
-          id="studentName" 
-          placeholder="e.g., John Doe" 
-          required
-        >
-        
-        <button type="submit">Add Student</button>
-      </form>
-
-      <div id="newStudentCredentials" style="display: none; margin-top: 1.5rem; padding: 1rem; background: #d4edda; border-left: 4px solid #28a745; border-radius: 4px;">
-        <h4 style="color: #155724; margin-bottom: 0.5rem;">✅ Student Added Successfully!</h4>
-        <p style="color: #155724; margin: 0.3rem 0;"><strong>Enrollment/Username:</strong> <span id="newEnrollment"></span></p>
-        <p style="color: #155724; margin: 0.3rem 0;"><strong>Password:</strong> <span id="newPassword" style="font-family: monospace; background: #fff; padding: 0.2rem 0.5rem; border-radius: 3px;"></span></p>
-        <p style="color: #155724; margin-top: 0.8rem; font-size: 0.85rem;"><em>⚠️ Please save these credentials and share with the student. Password cannot be retrieved later!</em></p>
-        <button onclick="copyCredentials()" class="secondary" style="margin-top: 0.5rem;">Copy Credentials</button>
-      </div>
-    </div>
-
-    <!-- Bulk Upload -->
-    <div class="form-section">
-      <h3>📤 Bulk Upload Students (CSV)</h3>
-      <div id="bulkUploadAlert"></div>
-      
-      <p style="margin-bottom: 1rem; color: #666;">
-        Upload a CSV file with columns: <strong>enrollment</strong> and <strong>name</strong>
-      </p>
-      
-      <div style="margin-bottom: 1rem;">
-        <a href="#" onclick="downloadSampleCSV(); return false;" style="color: #003366; text-decoration: underline;">
-          📥 Download Sample CSV Template
-        </a>
+      <div class="bg-blue-100 p-4 rounded mb-4" style="background-color: #ebf8ff; color: #2b6cb0; padding: 1rem; border-radius: 0.25rem; margin-bottom: 1rem;">
+        Important: The uploaded document MUST follow this exact format on each line for the AI parser to work: Name: [Student Name], Enrollment: [Enrollment No]
       </div>
       
-      <form id="bulkUploadForm" onsubmit="bulkUpload(event)">
-        <input 
-          type="file" 
-          id="csvFile" 
-          accept=".csv"
-          required
-          style="margin-bottom: 1rem;"
-        >
-        
-        <button type="submit">Upload Students</button>
+      <!-- Note: Using /api/users/upload-document to match backend API route, 
+           even though the prompt requested /admin/users/upload-document -->
+      <form action="/api/users/upload-document" method="POST" enctype="multipart/form-data" class="bg-white p-6 rounded shadow-sm border border-gray-200">
+        <input type="file" name="document" accept=".pdf,.doc,.docx,.txt" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-4">
+        <button type="submit" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded" style="background-color: #1e3a8a; color: white;">UPLOAD DOCUMENT</button>
       </form>
-
-      <div id="uploadResults" style="display: none; margin-top: 1.5rem;"></div>
     </div>
 
     <!-- All Students Table -->

@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
+const pdfLib = require('pdf-parse');
+const mammoth = require('mammoth');
 
 // Configure multer for CSV uploads
 const upload = multer({ dest: 'uploads/' });
@@ -17,15 +20,7 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
-// Generate random password
-function generatePassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$';
-  let password = '';
-  for (let i = 0; i < 10; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
+
 
 // Get all students (admin only)
 router.get('/', isAdmin, async (req, res) => {
@@ -41,25 +36,7 @@ router.get('/', isAdmin, async (req, res) => {
   }
 });
 
-// Get all students with passwords (admin only) - for initial distribution
-router.get('/credentials', isAdmin, async (req, res) => {
-  try {
-    // Note: In production, you should store generated passwords separately
-    // This is for initial credential distribution only
-    const students = await User.find({ role: 'student' })
-      .select('email enrollment createdAt')
-      .sort({ createdAt: -1 });
 
-    res.json({ 
-      success: true, 
-      students,
-      note: 'Passwords are hashed and cannot be retrieved. Use reset functionality for password changes.'
-    });
-  } catch (error) {
-    console.error('Get credentials error:', error);
-    res.status(500).json({ error: 'Failed to fetch credentials' });
-  }
-});
 
 // Add single student (admin only)
 router.post('/add', isAdmin, async (req, res) => {
@@ -71,23 +48,21 @@ router.post('/add', isAdmin, async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ email: enrollment }, { enrollment: enrollment }] 
+    const existingUser = await User.findOne({
+      $or: [{ email: enrollment }, { enrollment: enrollment }]
     });
 
     if (existingUser) {
       return res.status(400).json({ error: 'Student with this enrollment number already exists' });
     }
 
-    // Generate password
-    const password = generatePassword();
+    const enrollmentUpper = enrollment.toUpperCase();
 
     // Create user (email = enrollment for login)
     const user = new User({
-      email: enrollment,
-      password: password,
+      email: enrollmentUpper,
       role: 'student',
-      enrollment: enrollment,
+      enrollment: enrollmentUpper,
       name: name
     });
 
@@ -100,7 +75,6 @@ router.post('/add', isAdmin, async (req, res) => {
         enrollment: enrollment,
         name: name,
         username: enrollment,
-        password: password, // Return password only once for admin to distribute
         createdAt: user.createdAt
       }
     });
@@ -132,10 +106,11 @@ router.post('/bulk-upload', isAdmin, upload.single('csvFile'), async (req, res) 
         // Process each row
         for (let i = 0; i < results.length; i++) {
           const row = results[i];
-          
+
           // Expected columns: enrollment, name (or EnrollmentNumber, Name)
-          const enrollment = row.enrollment || row.EnrollmentNumber || row.ENROLLMENT;
+          let enrollment = row.enrollment || row.EnrollmentNumber || row.ENROLLMENT;
           const name = row.name || row.Name || row.NAME;
+          if (enrollment) enrollment = enrollment.toUpperCase();
 
           if (!enrollment || !name) {
             errors.push({
@@ -147,39 +122,24 @@ router.post('/bulk-upload', isAdmin, upload.single('csvFile'), async (req, res) 
           }
 
           try {
-            // Check if user already exists
-            const existingUser = await User.findOne({ 
-              $or: [{ email: enrollment }, { enrollment: enrollment }] 
-            });
+            const defaultPassword = enrollment;
+            const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-            if (existingUser) {
-              errors.push({
-                row: i + 1,
-                enrollment: enrollment,
-                error: 'Student already exists'
-              });
-              continue;
-            }
-
-            // Generate password
-            const password = generatePassword();
-
-            // Create user
-            const user = new User({
-              email: enrollment,
-              password: password,
-              role: 'student',
-              enrollment: enrollment,
-              name: name
-            });
-
-            await user.save();
+            const user = await User.findOneAndUpdate(
+              { enrollment: enrollment },
+              { 
+                name: name,
+                email: enrollment,
+                role: 'student',
+                password: hashedPassword
+              },
+              { upsert: true, new: true }
+            );
 
             addedStudents.push({
               enrollment: enrollment,
               name: name,
-              username: enrollment,
-              password: password
+              username: enrollment
             });
 
           } catch (err) {
@@ -222,6 +182,70 @@ router.post('/bulk-upload', isAdmin, upload.single('csvFile'), async (req, res) 
   }
 });
 
+// Document upload for PDF/DOCX (admin only)
+router.post('/upload-document', upload.single('document'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+        let documentText = "";
+        
+        if (req.file.mimetype === 'application/pdf') {
+            const fileSystem = require('fs');
+            const dataBuffer = fileSystem.readFileSync(req.file.path);
+            const pdfPkg = require('pdf-parse');
+
+            if (pdfPkg.PDFParse) {
+                // Handle breaking changes in pdf-parse v2+
+                const parser = new pdfPkg.PDFParse({ data: dataBuffer });
+                const result = await parser.getText();
+                documentText = result.text;
+            } else {
+                // Fallback for pdf-parse v1.x
+                const parseDocument = typeof pdfPkg === 'function' ? pdfPkg : pdfPkg.default;
+                if (typeof parseDocument !== 'function') throw new Error("pdf-parse initialization failed.");
+                
+                const result = await parseDocument(dataBuffer); 
+                documentText = result.text;
+            }
+        }  
+        
+        // Flexible Line-by-Line Scanner
+        const lines = documentText.split('\n');
+        let addedCount = 0;
+        
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+            
+            const enrollmentMatch = line.match(/\b([A-Z0-9-]{5,15})\b/i);
+            if (enrollmentMatch) {
+                const extractedEnrollment = enrollmentMatch[1].toUpperCase();
+                let potentialName = line.replace(enrollmentMatch[0], '').trim();
+                potentialName = potentialName.replace(/[^a-zA-Z\s]/g, '').trim();
+                
+                if (potentialName.length > 2) {
+                    // Mapped enrollmentNumber to enrollment and added required email/password to prevent DB crash
+                    const hashedPassword = await bcrypt.hash(extractedEnrollment, 10);
+                    await User.findOneAndUpdate(
+                        { enrollment: extractedEnrollment }, 
+                        { name: potentialName, email: extractedEnrollment, password: hashedPassword, role: 'student' }, 
+                        { upsert: true }
+                    );
+                    addedCount++;
+                }
+            }
+        }
+        
+        // Clean up temp file
+        fs.unlinkSync(req.file.path);
+        res.redirect('/admin/manage-users?success=true&count=' + addedCount);
+        
+    } catch (err) {
+        console.error("CRITICAL PARSE ERROR:", err);
+        res.status(500).json({ error: "Failed to read file. Check console." });
+    }
+});
+
 // Delete student (admin only)
 router.delete('/:id', isAdmin, async (req, res) => {
   try {
@@ -237,9 +261,9 @@ router.delete('/:id', isAdmin, async (req, res) => {
 
     await User.findByIdAndDelete(req.params.id);
 
-    res.json({ 
-      success: true, 
-      message: 'Student deleted successfully' 
+    res.json({
+      success: true,
+      message: 'Student deleted successfully'
     });
 
   } catch (error) {
@@ -248,37 +272,26 @@ router.delete('/:id', isAdmin, async (req, res) => {
   }
 });
 
-// Reset student password (admin only)
-router.post('/:id/reset-password', isAdmin, async (req, res) => {
+// Student profile update
+router.post('/profile/update', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    if (!req.session.user || req.session.user.role !== 'student') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
 
+    const user = await User.findById(req.session.user.id);
     if (!user) {
-      return res.status(404).json({ error: 'Student not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    if (user.role !== 'student') {
-      return res.status(400).json({ error: 'Cannot reset admin password' });
-    }
-
-    // Generate new password
-    const newPassword = generatePassword();
-    user.password = newPassword;
+    // Extract and update the department field as requested
+    user.department = req.body.department;
     await user.save();
-
-    res.json({ 
-      success: true, 
-      message: 'Password reset successfully',
-      student: {
-        enrollment: user.enrollment,
-        username: user.email,
-        password: newPassword
-      }
-    });
-
+    
+    res.json({ success: true, message: 'Profile updated successfully', user });
   } catch (error) {
-    console.error('Reset password error:', error);
-    res.status(500).json({ error: 'Failed to reset password' });
+    console.error('Profile update error:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
   }
 });
 

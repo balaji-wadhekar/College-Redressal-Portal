@@ -2,43 +2,61 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// Login (accepts email or enrollment number as username)
+// Login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password, enrollment } = req.body;
+    const { loginType, email, password, name, enrollmentNumber, enrollment } = req.body;
+    let user;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Username/Enrollment and password are required' });
+    if (loginType === 'admin') {
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required for admin login' });
+      }
+      user = await User.findOne({ email: email.toLowerCase().trim(), role: 'admin' });
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid admin credentials' });
+      }
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+         return res.status(401).json({ error: 'Invalid admin credentials' });
+      }
+    } else { // Student
+      const reqName = name || '';
+      const reqEnrollment = enrollmentNumber || enrollment || '';
+
+      if (!reqName || !reqEnrollment) {
+        return res.status(400).json({ error: 'Name and Enrollment Number are required' });
+      }
+
+      user = await User.findOne({
+        name: reqName.trim(),
+        enrollment: reqEnrollment.trim().toUpperCase()
+      });
+
+      if (!user) {
+        return res.status(401).json({ error: 'Name and Enrollment Number do not match official college records.' });
+      }
     }
 
-    // Find user by email (which is enrollment number for students)
-    let user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const isMatch = await user.comparePassword(password);
-
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
+    req.session.userId = user._id;
     req.session.user = {
       id: user._id,
       email: user.email,
       role: user.role,
       enrollment: user.enrollment,
-      name: user.name
+      name: user.name,
+      phone: user.phone
     };
 
     res.json({
       success: true,
+      redirect: '/student/dashboard',
       user: {
         email: user.email,
         role: user.role,
         enrollment: user.enrollment,
-        name: user.name
+        name: user.name,
+        phone: user.phone
       }
     });
 
@@ -59,55 +77,31 @@ router.post('/logout', (req, res) => {
 });
 
 // Check session
-router.get('/check', (req, res) => {
+router.get('/check', async (req, res) => {
   if (req.session.user) {
+    try {
+      // Fetch fresh data from DB to ensure name/details are current
+      const user = await User.findById(req.session.user.id);
+      if (user) {
+        // Update session with fresh data
+        req.session.user = {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+          enrollment: user.enrollment,
+          name: user.name,
+          phone: user.phone
+        };
+        return res.json({ authenticated: true, user: req.session.user });
+      }
+    } catch (err) {
+      console.error('Session check DB error:', err);
+    }
+    // Fallback to session data if DB fails
     res.json({ authenticated: true, user: req.session.user });
   } else {
     res.json({ authenticated: false });
   }
-});
-
-// Register (admin only - use /api/users/add instead)
-router.post('/register', async (req, res) => {
-  // Disabled for security - admin should use /api/users/add
-  return res.status(403).json({ error: 'Registration disabled. Contact admin for account creation.' });
-  
-  /*
-  try {
-    const { email, password, role, enrollment } = req.body;
-
-    if (!email || !password || !role) {
-      return res.status(400).json({ error: 'Email, password, and role are required' });
-    }
-
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
-
-    const user = new User({
-      email,
-      password,
-      role,
-      enrollment: enrollment || 'N/A'
-    });
-
-    await user.save();
-
-    res.status(201).json({
-      success: true,
-      message: 'User created successfully',
-      user: {
-        email: user.email,
-        role: user.role
-      }
-    });
-
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Server error during registration' });
-  }
-  */
 });
 
 module.exports = router;
