@@ -5,7 +5,7 @@ const API_BASE_URL = 'http://localhost:3000/api';
 const api = {
   // Authentication
   async login(payload) {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/auth/admin-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

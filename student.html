@@ -51,19 +51,19 @@
 
           <div class="univ-group-row">
             <div class="univ-form-group half">
-              <label class="univ-label">Full Name <span class="read-only-tag">(Read Only)</span></label>
-              <input type="text" id="studentName" class="univ-input" readonly style="background-color: #f8f9fa;">
+              <label class="univ-label">Full Name</label>
+              <input type="text" id="studentName" name="name" class="univ-input" placeholder="Enter your full name" required>
             </div>
             <div class="univ-form-group half">
               <label class="univ-label">Enrollment No. <span class="read-only-tag">(Read Only)</span></label>
-              <input type="text" id="studentEnrollment" class="univ-input" readonly style="background-color: #f8f9fa;">
+              <input type="text" id="studentEnrollment" name="enrollmentNumber" class="univ-input" readonly style="background-color: #f8f9fa;">
             </div>
           </div>
 
           <div class="univ-group-row">
             <div class="univ-form-group half">
-              <label class="univ-label" for="studentEmail">Email Address</label>
-              <input type="email" id="studentEmail" class="univ-input" placeholder="Enter your email" required>
+              <label class="univ-label" for="studentEmail">Email Address <span class="read-only-tag">(Read Only)</span></label>
+              <input type="email" id="studentEmail" name="email" class="univ-input" readonly style="background-color: #f8f9fa;">
             </div>
             <div class="univ-form-group half">
               <label class="univ-label" for="studentPhone">Phone Number</label>

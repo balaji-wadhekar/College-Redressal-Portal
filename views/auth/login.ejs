@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>College Grievance Portal - Login</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="login-logo">
+        <img src="/mitlogo.png" alt="College Logo">
+      </div>
+
+      <h1>College Grievance Portal</h1>
+      <p class="subtitle">MIT ART DESIGN AND TECHNOLOGICAL UNIVERSITY PUNE</p>
+
+      <h2>Portal Login</h2>
+      
+
+
+      <div id="alertContainer"></div>
+
+      <div class="flex justify-center space-x-4 mb-6">
+        <button type="button" onclick="switchTab('student')" id="btn-student" class="px-6 py-2 font-bold rounded bg-[#003366] text-white">STUDENT</button>
+        <button type="button" onclick="switchTab('admin')" id="btn-admin" class="px-6 py-2 font-bold rounded bg-gray-200 text-gray-700">ADMIN</button>
+      </div>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+      <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 text-sm text-center font-bold"><%= error %></div>
+      <% } %>
+      <% if (typeof success !== 'undefined' && success) { %>
+      <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-3 mb-4 text-sm text-center font-bold"><%= success %></div>
+      <% } %>
+
+      <div id="student-section">
+      <form action="/api/auth/login" method="POST" class="space-y-4">
+      <% if (typeof showOtpField !== 'undefined' && showOtpField) { %>
+              <input type="hidden" name="enrollmentNumber" value="<%= enrollmentNumber %>">
+              <input type="hidden" name="email" value="<%= email %>">
+              <div>
+                  <p class="text-sm font-bold text-[#003366] text-center mb-2">Enter 4-Digit Code</p>
+                  <input type="text" name="otp" required pattern="\d{4}" maxlength="4" autocomplete="off"
+                         class="w-full border border-gray-300 p-4 rounded bg-blue-50 focus:outline-none focus:ring-2 focus:ring-[#003366] text-center text-3xl tracking-[1em] font-mono" 
+                         placeholder="••••">
+              </div>
+              <button type="submit" formaction="/api/auth/verify-otp" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow-md mt-2">
+                  VERIFY & ENTER PORTAL
+              </button>
+      <% } else { %>
+              <div>
+                  <input type="text" name="enrollmentNumber" required 
+                         class="w-full border border-gray-300 p-3 rounded bg-blue-50 focus:outline-none focus:ring-2 focus:ring-[#003366]" 
+                         placeholder="Enrollment Number (ADT...)">
+              </div>
+              <div>
+                  <input type="email" name="email" required 
+                         class="w-full border border-gray-300 p-3 rounded bg-blue-50 focus:outline-none focus:ring-2 focus:ring-[#003366]" 
+                         placeholder="Registered Email">
+              </div>
+              <button type="submit" class="w-full bg-[#003366] hover:bg-blue-800 text-white font-bold py-3 px-4 rounded shadow-md mt-2">
+                  SEND LOGIN CODE
+              </button>
+      <% } %>
+      </form>
+      </div>
+
+      <div id="admin-section" style="display: none;">
+          <form action="/api/auth/admin-login" method="POST" class="space-y-4">
+              <div>
+                  <input type="email" name="email" required 
+                         class="w-full border border-gray-300 p-3 rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600" 
+                         placeholder="Admin Email">
+              </div>
+              <div>
+                  <input type="password" name="password" required autocomplete="current-password"
+                         class="w-full border border-gray-300 p-3 rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600" 
+                         placeholder="Password">
+              </div>
+              <button type="submit" class="w-full bg-gray-800 hover:bg-black text-white font-bold py-3 px-4 rounded shadow-md mt-2">
+                  LOGIN AS ADMIN
+              </button>
+          </form>
+      </div>
+
+  <script>
+    function switchTab(tab) {
+        const studentSection = document.getElementById('student-section');
+        const adminSection = document.getElementById('admin-section');
+        const btnStudent = document.getElementById('btn-student');
+        const btnAdmin = document.getElementById('btn-admin');
+        
+        // Grab all inputs/buttons inside the forms
+        const studentInputs = studentSection.querySelectorAll('input, button');
+        const adminInputs = adminSection.querySelectorAll('input, button');
+
+        if (tab === 'student') {
+            // UI Display
+            studentSection.style.display = 'block';
+            adminSection.style.display = 'none';
+            btnStudent.className = "px-6 py-2 font-bold rounded bg-[#003366] text-white";
+            btnAdmin.className = "px-6 py-2 font-bold rounded bg-gray-200 text-gray-700";
+            
+            // SAFE LOGIC: Enable student inputs, disable admin inputs so HTML5 validation doesn't crash
+            studentInputs.forEach(el => el.disabled = false);
+            adminInputs.forEach(el => el.disabled = true);
+        } else {
+            // UI Display
+            studentSection.style.display = 'none';
+            adminSection.style.display = 'block';
+            btnAdmin.className = "px-6 py-2 font-bold rounded bg-[#003366] text-white";
+            btnStudent.className = "px-6 py-2 font-bold rounded bg-gray-200 text-gray-700";
+            
+            // SAFE LOGIC: Enable admin inputs, disable student inputs
+            studentInputs.forEach(el => el.disabled = true);
+            adminInputs.forEach(el => el.disabled = false);
+        }
+    }
+
+    // Force the correct tab to open when the page loads (crucial for OTP flow)
+    window.onload = function() {
+        const activeTab = '<%= typeof activeTab !== "undefined" ? activeTab : "student" %>';
+        switchTab(activeTab);
+    };
+  </script>
+  <script src="/public/api.js"></script>
+  <script src="/public/script.js"></script>
+</body>
+
+</html>

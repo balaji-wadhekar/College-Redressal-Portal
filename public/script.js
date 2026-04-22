@@ -28,30 +28,37 @@ function formatDate(timestamp) {
 
 // ========== LOGIN ==========
 async function login(event) {
-  event.preventDefault();
+  let roleElem = document.getElementById("loginRole");
+  
+  // If we aren't explicitly submitting the admin form, bypass JS interception
+  // to let the natural HTML POST action happen for the student OTP flow.
+  if (!roleElem || roleElem.value !== 'admin') {
+    return true; 
+  }
 
-  let role = document.getElementById("loginRole").value;
+  // It's the Admin form, prevent natural submission and use AJAX
+  event.preventDefault();
+  
+  let role = roleElem.value;
   let payload = { loginType: role };
 
-  if (role === 'student') {
-    let enrollment = document.getElementById("enrollment").value.trim();
-    let name = document.getElementById("name").value.trim();
-    if (!enrollment || !name) {
-      showAlert('alertContainer', 'Please fill in all required fields!', 'error');
+  let emailElem = document.getElementById("email");
+  let passElem = document.getElementById("password");
+  
+  if (!emailElem || !passElem) {
       return;
-    }
-    payload.enrollment = enrollment;
-    payload.name = name;
-  } else {
-    let email = document.getElementById("email").value.trim();
-    let pass = document.getElementById("password").value;
-    if (!email || !pass) {
-      showAlert('alertContainer', 'Please fill in all required fields!', 'error');
-      return;
-    }
-    payload.email = email;
-    payload.password = pass;
   }
+  
+  let email = emailElem.value.trim();
+  let pass = passElem.value;
+  
+  if (!email || !pass) {
+    showAlert('alertContainer', 'Please fill in all required fields!', 'error');
+    return;
+  }
+  
+  payload.email = email;
+  payload.password = pass;
 
   try {
     const result = await api.login(payload);

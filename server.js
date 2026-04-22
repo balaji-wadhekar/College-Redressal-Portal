@@ -60,7 +60,7 @@ app.use('/student', require('./routes/student'));
 
 // Serve HTML pages
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.render('auth/login');
 });
 
 app.get('/student.html', (req, res) => {
