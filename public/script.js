@@ -331,6 +331,18 @@ function filterComplaints() {
 // ========== ADMIN FUNCTIONS ==========
 window.adminGrievances = [];
 
+function getAssignedAdmin(category) {
+  let admin = { name: "Balaji Wadhekar", email: "wadhekarbalaji56@gmail.com" };
+  if (category === "Student Section" || category === "Admission") {
+      admin = { name: "Mauli Phad", email: "mauliphad76@gmail.com" };
+  } else if (category === "Hostel" || category === "Hostel Mess") {
+      admin = { name: "Vaishnvi Katkade", email: "vaishnvikatkade690@gmail.com" };
+  } else if (category === "Library" || category === "Computer and Network") {
+      admin = { name: "Akanksha Mundhe", email: "wadhekarba@gmail.com" };
+  }
+  return admin;
+}
+
 async function loadAdminComplaints() {
   try {
     const result = await api.getComplaints();
@@ -397,13 +409,27 @@ async function loadAdminComplaints() {
     document.querySelector(".table-container").style.display = "block";
 
     complaints.forEach((c) => {
+      const assigned = getAssignedAdmin(c.category);
+      const subject = encodeURIComponent(`Regarding Grievance ${c.trackingID || c._id}`);
+      const body = encodeURIComponent(`Hello ${assigned.name},\n\nI am reaching out regarding grievance '${c.title}'.\n\nPlease provide an update.`);
+      const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${assigned.email}&su=${subject}&body=${body}`;
+      
       let statusClass = c.status.toLowerCase().replace(' ', '-');
       let row = `<tr>
                   <td class="align-top p-4 border-b border-gray-200"><strong>${c.trackingID || '#' + c._id.substr(-6)}</strong></td>
                   <td class="align-top p-4 border-b border-gray-200">${c.title}</td>
                   <td class="align-top p-4 border-b border-gray-200">${c.category}</td>
-                  <td class="align-top p-4 border-b border-gray-200" style="max-width: 300px;">${c.description}</td>
                   <td class="align-top p-4 border-b border-gray-200"><span class="status ${statusClass}">${c.status}</span></td>
+                  <td class="align-top p-4 border-b border-gray-200">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="font-weight: 500;">${assigned.name}</span>
+                          <a href="${gmailLink}" target="_blank" rel="noopener noreferrer"
+                             style="color: #003366; font-size: 1.2rem; transition: color 0.2s; text-decoration: none;"
+                             title="Email ${assigned.name} via Gmail">
+                              ✉️
+                          </a>
+                      </div>
+                  </td>
                   <td class="align-top p-4 border-b border-gray-200">${formatDate(c.createdAt)}</td>
                   <td class="align-top p-4 border-b border-gray-200">
                     <div class="flex flex-col gap-2 items-center">
@@ -634,8 +660,8 @@ window.onload = async function () {
   if (window.location.pathname.includes('student.html')) {
     if (await checkAuth('student')) {
       // Pre-fill Personal Info
-      if (document.getElementById("studentName")) document.getElementById("studentName").value = localStorage.getItem("name") || "";
       if (document.getElementById("studentEnrollment")) document.getElementById("studentEnrollment").value = localStorage.getItem("enrollment") || "";
+      if (document.getElementById("studentEmail")) document.getElementById("studentEmail").value = localStorage.getItem("email") || "";
       if (document.getElementById("profileDept")) document.getElementById("profileDept").value = localStorage.getItem("department") || "";
       if (document.getElementById("studentDept") && localStorage.getItem("department")) {
         document.getElementById("studentDept").value = localStorage.getItem("department");
@@ -657,8 +683,17 @@ window.viewGrievanceDetails = function(id) {
   
   const modalContent = document.getElementById("modalContent");
   
+  const formattedDate = new Date(c.createdAt).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
   modalContent.innerHTML = `
     <div style="margin-bottom: 20px; font-size: 15px; line-height: 1.6;">
+      <p><strong>Date Submitted:</strong> ${formattedDate}</p>
       <p><strong>Category:</strong> ${c.category}</p>
       <p><strong>Subject:</strong> ${c.title}</p>
       <p><strong>Summary:</strong> ${c.description}</p>
