@@ -21,21 +21,28 @@ router.post('/login', async (req, res) => {
          return res.status(401).json({ error: 'Invalid admin credentials' });
       }
     } else { // Student
-      const reqName = name || '';
       const reqEnrollment = enrollmentNumber || enrollment || '';
+      const cleanEnrollment = reqEnrollment ? reqEnrollment.toUpperCase().trim() : '';
 
-      if (!reqName || !reqEnrollment) {
-        return res.status(400).json({ error: 'Name and Enrollment Number are required' });
+      // 1. The ONLY Authentication Rule: Must start with ADT
+      if (!cleanEnrollment.startsWith('ADT')) {
+        return res.status(400).json({ error: "Invalid login. You must enter correct Enrollment Number." });
       }
 
-      user = await User.findOne({
-        name: reqName.trim(),
-        enrollment: reqEnrollment.trim().toUpperCase()
-      });
-
-      if (!user) {
-        return res.status(401).json({ error: 'Name and Enrollment Number do not match official college records.' });
-      }
+      // 2. Silent DB Hook (Finds the user, or instantly creates them if they don't exist)
+      // This ensures your session gets a valid MongoDB _id without ever throwing a "Not Found" error
+      user = await User.findOneAndUpdate(
+        { enrollment: cleanEnrollment },
+        {
+          $set: { role: 'student' },
+          $setOnInsert: {
+            email: `${cleanEnrollment.toLowerCase()}@student.local`,
+            password: cleanEnrollment,
+            name: name || cleanEnrollment
+          }
+        },
+        { upsert: true, new: true }
+      );
     }
 
     req.session.userId = user._id;

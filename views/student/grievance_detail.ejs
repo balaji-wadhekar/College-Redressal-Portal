@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Grievance Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-4xl mx-auto bg-white p-8 shadow rounded-lg">
+    <div class="mb-4">
+      <a href="/student/dashboard" class="text-blue-500 hover:text-blue-700">← Back to Dashboard</a>
+    </div>
+
+    <h1 class="text-3xl font-bold mb-4"><%= grievance.title %></h1>
+    
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
+        <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-800">Official Grievance Record</h3>
+        </div>
+        <div class="p-0">
+            <dl class="divide-y divide-gray-200">
+                <div class="px-6 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4 hover:bg-gray-50 transition">
+                    <dt class="text-sm font-bold text-gray-500 uppercase tracking-wider">Grievance ID</dt>
+                    <dd class="text-sm text-gray-900 sm:col-span-2 font-mono font-bold"><%= grievance.trackingID || grievance._id %></dd>
+                </div>
+                
+                <div class="px-6 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4 hover:bg-gray-50 transition">
+                    <dt class="text-sm font-bold text-gray-500 uppercase tracking-wider">Status</dt>
+                    <dd class="text-sm text-gray-900 sm:col-span-2">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold border 
+                            <%= grievance.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 
+                                grievance.status === 'In Progress' ? 'bg-blue-100 text-blue-800 border-blue-200' : 
+                                'bg-green-100 text-green-800 border-green-200' %>">
+                            <%= grievance.status %>
+                        </span>
+                    </dd>
+                </div>
+
+                <div class="px-6 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4 hover:bg-gray-50 transition">
+                    <dt class="text-sm font-bold text-gray-500 uppercase tracking-wider">Date Submitted</dt>
+                    <dd class="text-sm text-gray-900 sm:col-span-2"><%= new Date(grievance.createdAt).toLocaleString() %></dd>
+                </div>
+
+                <div class="px-6 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4 hover:bg-gray-50 transition">
+                    <dt class="text-sm font-bold text-gray-500 uppercase tracking-wider">Category</dt>
+                    <dd class="text-sm text-gray-900 sm:col-span-2 font-medium"><%= grievance.category %></dd>
+                </div>
+
+                <div class="px-6 py-5 grid grid-cols-1 gap-4 bg-gray-50">
+                    <dt class="text-sm font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-2">Description</dt>
+                    <dd class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed"><%= grievance.description %></dd>
+                </div>
+
+                <% if (grievance.docPath) { %>
+                <div class="px-6 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4 hover:bg-gray-50 transition">
+                    <dt class="text-sm font-bold text-gray-500 uppercase tracking-wider">Attached Evidence</dt>
+                    <dd class="text-sm text-gray-900 sm:col-span-2">
+                        <a href="/uploads/<%= grievance.docPath %>" target="_blank" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded transition">
+                            📄 View Document
+                        </a>
+                    </dd>
+                </div>
+                <% } %>
+            </dl>
+        </div>
+    </div>
+  </div>
+</body>
+</html>

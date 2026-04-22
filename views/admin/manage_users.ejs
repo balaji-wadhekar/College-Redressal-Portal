@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitor | Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8 flex flex-col items-center justify-center">
+
+    <div class="max-w-md w-full">
+        <div class="mb-6">
+            <a href="/admin.html" class="text-gray-500 hover:text-gray-800 transition font-medium">
+                &larr; Back to Dashboard
+            </a>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-8 text-center border-t-4 border-green-500 relative overflow-hidden">
+            <div class="absolute top-4 right-4 flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span class="text-xs font-bold text-green-600 uppercase tracking-wider">System Live</span>
+            </div>
+            <h2 class="text-gray-500 text-lg font-semibold uppercase tracking-widest mb-2 mt-4">Total Active Users</h2>
+            
+            <div class="text-7xl font-black text-gray-800 mb-2">
+                <%= activeUsers %>
+            </div>
+            
+            <p class="text-sm text-gray-400">Students currently registered in the database</p>
+        </div>
+    </div>
+</body>
+</html>

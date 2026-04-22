@@ -74,6 +74,15 @@ const api = {
     return await response.json();
   },
 
+  async updateComplaint(id, formData) {
+    const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {
+      method: 'PUT',
+      credentials: 'include',
+      body: formData
+    });
+    return await response.json();
+  },
+
   async updateComplaintStatus(id, status) {
     const response = await fetch(`${API_BASE_URL}/complaints/${id}/status`, {
       method: 'PATCH',

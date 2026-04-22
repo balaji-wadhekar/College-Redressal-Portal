@@ -18,6 +18,10 @@ if (!require('fs').existsSync(uploadDir)) {
 // Connect to MongoDB
 connectDB();
 
+// View engine configuration
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -52,6 +56,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/complaints', require('./routes/complaints'));
 app.use('/api/users', require('./routes/users'));
 app.use('/admin', require('./routes/admin'));
+app.use('/student', require('./routes/student'));
 
 // Serve HTML pages
 app.get('/', (req, res) => {

@@ -195,15 +195,28 @@
         <option value="Resolved">Resolved</option>
       </select>
       <select id="categoryFilter" onchange="filterComplaints()">
-        <option value="">All Categories</option>
-        <option value="Academic">Academic</option>
-        <option value="Hostel">Hostel</option>
-        <option value="Exam">Examination</option>
-        <option value="Infrastructure">Infrastructure</option>
-        <option value="Library">Library</option>
-        <option value="Canteen">Canteen</option>
-        <option value="Transport">Transport</option>
-        <option value="Other">Other</option>
+     <option value="">-- Select Category --</option>
+              <option value="General Grievance">General Grievance</option>
+              <option value="Hostel">Hostel</option>
+                <option value="Hostel Mess">Hostel Mess</option>
+              <option value="Sexual Harassment">Sexual Harassment</option>
+              <option value="Ragging">Ragging</option>
+              <option value="Admission">Admission</option>
+              <option value="Discrimination">Discrimination</option>
+              <option value="Faculty Related">Faculty Related</option>
+              <option value="Computer and Network">Computer and Network</option>
+              <option value="ERP">ERP</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Student Section">Student Section</option>
+              <option value="Administration and HR">Administration and HR</option>
+              <option value="Procurement and Inventory">Procurement and Inventory</option>
+              <option value="Accounts">Accounts</option>
+              <option value="Transport">Transport</option>
+              <option value="Library">Library</option>
+              <option value="Training and Placement">Training and Placement</option>
+              <option value="Student Grievance">Student Grievance</option>
+              <option value="RO Plant">RO Plant</option>
+              <option value="Other">Other</option>
       </select>
     </div>
 
@@ -232,8 +245,16 @@
     </div>
   </div>
 
+  <!-- Grievance Detail/Edit Modal -->
+  <div id="grievanceModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #e2e8f0; width: 90%; max-width: 600px; border-radius: 12px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+      <span class="close" onclick="closeModal()" style="color: #94a3b8; position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1;">&times;</span>
+      <h2 id="modalTitle" style="margin-top: 0; margin-bottom: 20px; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Grievance Details</h2>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
   <script src="public/api.js"></script>
   <script src="public/script.js"></script>
 </body>
-
 </html>

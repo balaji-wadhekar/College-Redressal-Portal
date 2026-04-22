@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Student Dashboard</h1>
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+      <table class="min-w-full leading-normal">
+        <thead>
+          <tr>
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Title</th>
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if(typeof grievances !== 'undefined' && grievances.length > 0) { %>
+            <% grievances.forEach(grievance => { %>
+              <tr>
+                <td class="px-5 py-5 border-b border-gray-200 text-sm"><%= grievance.title %></td>
+                <td class="px-5 py-5 border-b border-gray-200 text-sm"><%= grievance.category %></td>
+                <td class="px-5 py-5 border-b border-gray-200 text-sm"><%= grievance.status %></td>
+                <td class="py-3 px-4 border-b text-center">
+                  <a href="/student/grievance/<%= grievance._id %>" class="bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-300 font-semibold py-1.5 px-4 rounded shadow-sm transition inline-block text-sm">
+                    👁️ View
+                  </a>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="4" class="px-5 py-5 text-center text-gray-500">No grievances found.</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

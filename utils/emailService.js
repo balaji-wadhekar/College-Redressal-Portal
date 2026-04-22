@@ -72,5 +72,6 @@ const sendStatusUpdateEmail = async (studentEmail, studentName, trackingID, newS
 };
 
 module.exports = {
-  sendStatusUpdateEmail
+  sendStatusUpdateEmail,
+  transporter
 };

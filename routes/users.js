@@ -92,76 +92,48 @@ router.post('/bulk-upload', isAdmin, upload.single('csvFile'), async (req, res) 
       return res.status(400).json({ error: 'CSV file is required' });
     }
 
-    const results = [];
-    const errors = [];
-    const addedStudents = [];
-
     // Read and parse CSV
     fs.createReadStream(req.file.path)
       .pipe(csv())
-      .on('data', (row) => {
-        results.push(row);
-      })
-      .on('end', async () => {
-        // Process each row
-        for (let i = 0; i < results.length; i++) {
-          const row = results[i];
-
-          // Expected columns: enrollment, name (or EnrollmentNumber, Name)
-          let enrollment = row.enrollment || row.EnrollmentNumber || row.ENROLLMENT;
-          const name = row.name || row.Name || row.NAME;
-          if (enrollment) enrollment = enrollment.toUpperCase();
-
-          if (!enrollment || !name) {
-            errors.push({
-              row: i + 1,
-              data: row,
-              error: 'Missing enrollment or name'
-            });
-            continue;
+      .on('data', async (row) => {
+        try {
+          // 1. Normalize headers: lowercase everything and remove spaces/special characters
+          const cleanRow = {};
+          for (const key in row) {
+            const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+            cleanRow[cleanKey] = row[key];
           }
 
-          try {
-            const defaultPassword = enrollment;
-            const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+          // 2. Smart Match: Look for common variations of PRN/Roll No and Name
+          const extractedEnrollment = cleanRow['prn'] || cleanRow['rollno'] || cleanRow['enrollmentno'] || cleanRow['seatno'] || cleanRow['id'] || cleanRow['enrollment'];
+          const extractedName = cleanRow['name'] || cleanRow['studentname'] || cleanRow['candidatename'] || cleanRow['fullname'];
 
-            const user = await User.findOneAndUpdate(
+          // 3. Safety Check: If it's a blank row or missing critical data, skip it smoothly
+          if (!extractedEnrollment || !extractedName) {
+              return;
+          }
+
+          // 4. Save to Database
+          // Used 'enrollment' field since that's the real DB schema column and preserved email/password initialization
+          let enrollment = String(extractedEnrollment).trim().toUpperCase();
+          const hashedPassword = await bcrypt.hash(enrollment, 10);
+
+          await User.findOneAndUpdate(
               { enrollment: enrollment },
-              { 
-                name: name,
-                email: enrollment,
-                role: 'student',
-                password: hashedPassword
-              },
+              { name: String(extractedName).trim(), email: enrollment.toLowerCase(), role: 'student', password: hashedPassword },
               { upsert: true, new: true }
-            );
-
-            addedStudents.push({
-              enrollment: enrollment,
-              name: name,
-              username: enrollment
-            });
-
-          } catch (err) {
-            errors.push({
-              row: i + 1,
-              enrollment: enrollment,
-              error: err.message
-            });
-          }
+          );
+        } catch (err) {
+          console.error("Error processing CSV row:", err);
         }
-
+      })
+      .on('end', () => {
         // Delete uploaded file
-        fs.unlinkSync(req.file.path);
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
         res.json({
           success: true,
-          message: `Successfully added ${addedStudents.length} students`,
-          addedStudents: addedStudents,
-          errors: errors.length > 0 ? errors : undefined,
-          totalProcessed: results.length,
-          successCount: addedStudents.length,
-          errorCount: errors.length
+          message: `CSV processing started. Uniquely filtered and mapped records are syncing to the database.`
         });
       })
       .on('error', (error) => {
@@ -188,7 +160,7 @@ router.post('/upload-document', upload.single('document'), async (req, res) => {
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
         let documentText = "";
-        
+
         if (req.file.mimetype === 'application/pdf') {
             const fileSystem = require('fs');
             const dataBuffer = fileSystem.readFileSync(req.file.path);
@@ -203,43 +175,43 @@ router.post('/upload-document', upload.single('document'), async (req, res) => {
                 // Fallback for pdf-parse v1.x
                 const parseDocument = typeof pdfPkg === 'function' ? pdfPkg : pdfPkg.default;
                 if (typeof parseDocument !== 'function') throw new Error("pdf-parse initialization failed.");
-                
-                const result = await parseDocument(dataBuffer); 
+
+                const result = await parseDocument(dataBuffer);
                 documentText = result.text;
             }
-        }  
-        
+        }
+
         // Flexible Line-by-Line Scanner
         const lines = documentText.split('\n');
         let addedCount = 0;
-        
+
         for (let line of lines) {
             line = line.trim();
             if (!line) continue;
-            
+
             const enrollmentMatch = line.match(/\b([A-Z0-9-]{5,15})\b/i);
             if (enrollmentMatch) {
                 const extractedEnrollment = enrollmentMatch[1].toUpperCase();
                 let potentialName = line.replace(enrollmentMatch[0], '').trim();
                 potentialName = potentialName.replace(/[^a-zA-Z\s]/g, '').trim();
-                
+
                 if (potentialName.length > 2) {
                     // Mapped enrollmentNumber to enrollment and added required email/password to prevent DB crash
                     const hashedPassword = await bcrypt.hash(extractedEnrollment, 10);
                     await User.findOneAndUpdate(
-                        { enrollment: extractedEnrollment }, 
-                        { name: potentialName, email: extractedEnrollment, password: hashedPassword, role: 'student' }, 
+                        { enrollment: extractedEnrollment },
+                        { name: potentialName, email: extractedEnrollment, password: hashedPassword, role: 'student' },
                         { upsert: true }
                     );
                     addedCount++;
                 }
             }
         }
-        
+
         // Clean up temp file
         fs.unlinkSync(req.file.path);
         res.redirect('/admin/manage-users?success=true&count=' + addedCount);
-        
+
     } catch (err) {
         console.error("CRITICAL PARSE ERROR:", err);
         res.status(500).json({ error: "Failed to read file. Check console." });
@@ -287,7 +259,7 @@ router.post('/profile/update', async (req, res) => {
     // Extract and update the department field as requested
     user.department = req.body.department;
     await user.save();
-    
+
     res.json({ success: true, message: 'Profile updated successfully', user });
   } catch (error) {
     console.error('Profile update error:', error);

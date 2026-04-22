@@ -51,16 +51,16 @@
 
     <!-- All Complaints Section -->
     <h3>📋 All Student Grievances</h3>
-    
+
     <div id="criticalAlertContainer" style="display: none;"></div>
     <div id="adminAlert"></div>
 
     <!-- Search and Filter -->
     <div class="filter-section">
-      <input 
-        type="text" 
-        id="adminSearchInput" 
-        placeholder="🔍 Search by ID, title, or description..." 
+      <input
+        type="text"
+        id="adminSearchInput"
+        placeholder="🔍 Search by ID, title, or description..."
         onkeyup="filterAdminComplaints()"
       >
       <select id="adminStatusFilter" onchange="filterAdminComplaints()">
@@ -71,14 +71,27 @@
       </select>
       <select id="adminCategoryFilter" onchange="filterAdminComplaints()">
         <option value="">All Categories</option>
-        <option value="Academic">Academic</option>
-        <option value="Hostel">Hostel</option>
-        <option value="Exam">Examination</option>
-        <option value="Infrastructure">Infrastructure</option>
-        <option value="Library">Library</option>
-        <option value="Canteen">Canteen</option>
-        <option value="Transport">Transport</option>
-        <option value="Other">Other</option>
+              <option value="General Grievance">General Grievance</option>
+              <option value="Hostel">Hostel</option>
+                <option value="Hostel Mess">Hostel Mess</option>
+              <option value="Sexual Harassment">Sexual Harassment</option>
+              <option value="Ragging">Ragging</option>
+              <option value="Admission">Admission</option>
+              <option value="Discrimination">Discrimination</option>
+              <option value="Faculty Related">Faculty Related</option>
+              <option value="Computer and Network">Computer and Network</option>
+              <option value="ERP">ERP</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Student Section">Student Section</option>
+              <option value="Administration and HR">Administration and HR</option>
+              <option value="Procurement and Inventory">Procurement and Inventory</option>
+              <option value="Accounts">Accounts</option>
+              <option value="Transport">Transport</option>
+              <option value="Library">Library</option>
+              <option value="Training and Placement">Training and Placement</option>
+              <option value="Student Grievance">Student Grievance</option>
+              <option value="RO Plant">RO Plant</option>
+              <option value="Other">Other</option>
       </select>
     </div>
 

@@ -215,6 +215,7 @@ async function loadComplaints() {
     if (!table) return;
 
     const complaints = result.complaints;
+    window.studentGrievances = complaints;
     table.innerHTML = "";
 
     if (complaints.length === 0) {
@@ -237,7 +238,12 @@ async function loadComplaints() {
                   <td><span class="status ${statusClass}">${c.status}</span></td>
                   <td>${formatDate(c.createdAt)}</td>
                   <td>
-                    ${c.status === 'Pending' ? `<button class="danger" onclick="deleteComplaint('${c._id}')">Delete</button>` : '<span style="color: #999;">-</span>'}
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                      <button style="background-color: #3b82f6; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; cursor: pointer;" onclick="viewStudentGrievance('${c._id}')">View</button>
+                      ${c.status === 'Pending' ? `<button style="background-color: #eab308; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; cursor: pointer;" onclick="editStudentGrievance('${c._id}')">Edit</button>
+                      <button style="background-color: #ef4444; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; cursor: pointer;" onclick="deleteComplaint('${c._id}')">Delete</button>` 
+                      : ''}
+                    </div>
                   </td>
                 </tr>`;
       table.innerHTML += row;
@@ -496,6 +502,125 @@ function filterAdminComplaints() {
     }
   });
 }
+
+// ========== MODULE/MODAL LOGIC FOR STUDENTS ==========
+window.viewStudentGrievance = function(id) {
+  const c = window.studentGrievances.find(g => g._id === id);
+  if (!c) return;
+
+  document.getElementById("modalTitle").innerText = "Grievance Details";
+  const modalContent = document.getElementById("modalContent");
+  
+  modalContent.innerHTML = `
+    <div style="margin-bottom: 20px; font-size: 15px; line-height: 1.6;">
+      <p><strong>Category:</strong> ${c.category}</p>
+      <p><strong>Subject:</strong> ${c.title}</p>
+      <p><strong>Summary:</strong> ${c.description}</p>
+      <p><strong>Status:</strong> ${c.status}</p>
+    </div>
+    
+    <div class="mt-6 border-t border-gray-200 pt-6" style="margin-top: 1.5rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+      <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3" style="font-size: 0.875rem; font-weight: 500; color: #6b7280; text-transform: uppercase;">Attached Proof</h3>
+      ${c.docPath ? `
+      <div style="display: flex; align-items: center; padding: 1rem; background-color: #eff6ff; border: 1px solid #dbeafe; border-radius: 0.5rem;">
+        <span style="font-size: 1.5rem; margin-right: 0.75rem;">📄</span>
+        <a href="/uploads/${c.docPath}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">View Uploaded Document</a>
+      </div>
+      ` : `
+      <div style="padding: 1rem; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.5rem; color: #6b7280; font-size: 0.875rem; font-style: italic;">
+        No proof document was attached.
+      </div>
+      `}
+    </div>
+    
+    ${c.status === 'Pending' ? `
+    <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+      <button style="background-color: #eab308; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-weight: bold;" onclick="editStudentGrievance('${c._id}')">Edit Grievance</button>
+      <button style="background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-weight: bold;" onclick="if(confirm('Delete this grievance?')) { deleteComplaint('${c._id}'); closeModal(); }">Delete Grievance</button>
+    </div>` : ''}
+  `;
+  document.getElementById("grievanceModal").style.display = "block";
+};
+
+window.editStudentGrievance = function(id) {
+  const c = window.studentGrievances.find(g => g._id === id);
+  if (!c || c.status !== 'Pending') return;
+
+  document.getElementById("modalTitle").innerText = "Edit Grievance";
+  const modalContent = document.getElementById("modalContent");
+  
+  modalContent.innerHTML = `
+    <form id="editGrievanceForm" onsubmit="submitEditComplaint(event, '${c._id}')">
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Title</label>
+        <input type="text" id="editTitle" value="${c.title}" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem;">
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Category</label>
+        <select id="editCategory" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem;">
+            <option value="General Grievance" ${c.category==='General Grievance'?'selected':''}>General Grievance</option>
+            <option value="Hostel" ${c.category==='Hostel'?'selected':''}>Hostel</option>
+            <option value="Hostel Mess" ${c.category==='Hostel Mess'?'selected':''}>Hostel Mess</option>
+            <option value="Sexual Harassment" ${c.category==='Sexual Harassment'?'selected':''}>Sexual Harassment</option>
+            <option value="Ragging" ${c.category==='Ragging'?'selected':''}>Ragging</option>
+            <option value="Admission" ${c.category==='Admission'?'selected':''}>Admission</option>
+            <option value="Discrimination" ${c.category==='Discrimination'?'selected':''}>Discrimination</option>
+            <option value="Faculty Related" ${c.category==='Faculty Related'?'selected':''}>Faculty Related</option>
+            <option value="Computer and Network" ${c.category==='Computer and Network'?'selected':''}>Computer and Network</option>
+            <option value="ERP" ${c.category==='ERP'?'selected':''}>ERP</option>
+            <option value="Maintenance" ${c.category==='Maintenance'?'selected':''}>Maintenance</option>
+            <option value="Student Section" ${c.category==='Student Section'?'selected':''}>Student Section</option>
+            <option value="Administration and HR" ${c.category==='Administration and HR'?'selected':''}>Administration and HR</option>
+            <option value="Accounts" ${c.category==='Accounts'?'selected':''}>Accounts</option>
+            <option value="Other" ${c.category==='Other'?'selected':''}>Other</option>
+        </select>
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Description</label>
+        <textarea id="editDescription" required rows="4" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem;">${c.description}</textarea>
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Update Document (Optional)</label>
+        <input type="file" id="editDocFile" accept=".pdf,.doc,.docx,.jpg,.png" style="width: 100%;">
+        ${c.docPath ? `<p style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">Leaves current doc if empty.</p>` : ''}
+      </div>
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+        <button type="button" onclick="viewStudentGrievance('${c._id}')" class="secondary">Cancel</button>
+        <button type="submit" class="success" style="background-color: #3b82f6; border: none; color: white; padding: 0.5rem 1rem; border-radius: 0.25rem; font-weight: bold; cursor: pointer;">Save Changes</button>
+      </div>
+    </form>
+  `;
+  document.getElementById("grievanceModal").style.display = "block";
+};
+
+window.submitEditComplaint = async function(event, id) {
+  event.preventDefault();
+  
+  let title = document.getElementById("editTitle").value.trim();
+  let category = document.getElementById("editCategory").value;
+  let desc = document.getElementById("editDescription").value.trim();
+  let docFile = document.getElementById("editDocFile").files[0];
+  
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('category', category);
+  formData.append('description', desc);
+  if (docFile) formData.append('docFile', docFile);
+  
+  try {
+    const result = await api.updateComplaint(id, formData);
+    if (result.success) {
+      showAlert('complaintAlert', '✅ Grievance updated successfully!', 'success');
+      closeModal();
+      await loadComplaints();
+    } else {
+      showAlert('complaintAlert', result.error || 'Failed to update', 'error');
+    }
+  } catch (error) {
+    console.error(error);
+    showAlert('complaintAlert', 'Failed to update', 'error');
+  }
+};
 
 // ========== PAGE LOAD INITIALIZATION ==========
 window.onload = async function () {

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Grievance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-2xl mx-auto bg-white p-8 shadow rounded-lg">
+    <div class="mb-4">
+      <a href="/student/grievance/<%= grievance._id %>" class="text-blue-500 hover:text-blue-700">← Back to Details</a>
+    </div>
+
+    <h1 class="text-3xl font-bold mb-6">Edit Grievance</h1>
+
+    <form action="/student/grievance/<%= grievance._id %>/edit" method="POST" enctype="multipart/form-data">
+      
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2">Title</label>
+        <input type="text" name="title" value="<%= grievance.title %>" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2">Category</label>
+        <select name="category" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+          <option value="General Grievance" <%= grievance.category === 'General Grievance' ? 'selected' : '' %>>General Grievance</option>
+          <option value="Hostel" <%= grievance.category === 'Hostel' ? 'selected' : '' %>>Hostel</option>
+          <option value="Hostel Mess" <%= grievance.category === 'Hostel Mess' ? 'selected' : '' %>>Hostel Mess</option>
+          <option value="Sexual Harassment" <%= grievance.category === 'Sexual Harassment' ? 'selected' : '' %>>Sexual Harassment</option>
+          <option value="Ragging" <%= grievance.category === 'Ragging' ? 'selected' : '' %>>Ragging</option>
+          <option value="Admission" <%= grievance.category === 'Admission' ? 'selected' : '' %>>Admission</option>
+          <option value="Discrimination" <%= grievance.category === 'Discrimination' ? 'selected' : '' %>>Discrimination</option>
+          <option value="Faculty Related" <%= grievance.category === 'Faculty Related' ? 'selected' : '' %>>Faculty Related</option>
+          <option value="Computer and Network" <%= grievance.category === 'Computer and Network' ? 'selected' : '' %>>Computer and Network</option>
+          <option value="ERP" <%= grievance.category === 'ERP' ? 'selected' : '' %>>ERP</option>
+          <option value="Maintenance" <%= grievance.category === 'Maintenance' ? 'selected' : '' %>>Maintenance</option>
+          <option value="Student Section" <%= grievance.category === 'Student Section' ? 'selected' : '' %>>Student Section</option>
+          <option value="Administration and HR" <%= grievance.category === 'Administration and HR' ? 'selected' : '' %>>Administration and HR</option>
+          <option value="Accounts" <%= grievance.category === 'Accounts' ? 'selected' : '' %>>Accounts</option>
+          <option value="Other" <%= grievance.category === 'Other' ? 'selected' : '' %>>Other</option>
+        </select>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+        <textarea name="description" required rows="5" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"><%= grievance.description %></textarea>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-gray-700 text-sm font-bold mb-2">Update Attached Document (optional)</label>
+        <% if (grievance.docPath) { %>
+            <p class="text-sm text-gray-500 mb-2">Current document: <a href="/uploads/<%= grievance.docPath %>" target="_blank" class="text-blue-500 underline">View</a></p>
+        <% } %>
+        <input type="file" name="document" accept=".pdf,.doc,.docx,.jpg,.png" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+      </div>
+
+      <div class="flex items-center justify-end">
+        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

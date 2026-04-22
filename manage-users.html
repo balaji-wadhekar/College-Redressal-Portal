@@ -31,21 +31,7 @@
       </div>
     </div>
 
-    <!-- Document Upload -->
-    <div class="form-section">
-      <h3>📄 Upload Student Master Document</h3>
-      
-      <div class="bg-blue-100 p-4 rounded mb-4" style="background-color: #ebf8ff; color: #2b6cb0; padding: 1rem; border-radius: 0.25rem; margin-bottom: 1rem;">
-        Important: The uploaded document MUST follow this exact format on each line for the AI parser to work: Name: [Student Name], Enrollment: [Enrollment No]
-      </div>
-      
-      <!-- Note: Using /api/users/upload-document to match backend API route, 
-           even though the prompt requested /admin/users/upload-document -->
-      <form action="/api/users/upload-document" method="POST" enctype="multipart/form-data" class="bg-white p-6 rounded shadow-sm border border-gray-200">
-        <input type="file" name="document" accept=".pdf,.doc,.docx,.txt" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-4">
-        <button type="submit" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded" style="background-color: #1e3a8a; color: white;">UPLOAD DOCUMENT</button>
-      </form>
-    </div>
+
 
     <!-- All Students Table -->
     <h3>📋 All Students</h3>
