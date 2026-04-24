@@ -56,7 +56,7 @@ async function addStudent(event) {
   }
   
   try {
-    const response = await fetch('http://localhost:3000/api/users/add', {
+    const response = await fetch('/api/users/add', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -133,7 +133,7 @@ async function bulkUpload(event) {
   try {
     showAlert('bulkUploadAlert', '⏳ Uploading and processing...', 'success');
     
-    const response = await fetch('http://localhost:3000/api/users/bulk-upload', {
+    const response = await fetch('/api/users/bulk-upload', {
       method: 'POST',
       credentials: 'include',
       body: formData
@@ -242,7 +242,7 @@ function exportCredentials() {
 // Load all students
 async function loadStudents() {
   try {
-    const response = await fetch('http://localhost:3000/api/users', {
+    const response = await fetch('/api/users', {
       credentials: 'include'
     });
     
@@ -308,7 +308,7 @@ async function resetPassword(userId, enrollment) {
   if (!confirm(`Reset password for student ${enrollment}?`)) return;
   
   try {
-    const response = await fetch(`http://localhost:3000/api/users/${userId}/reset-password`, {
+    const response = await fetch(`/api/users/${userId}/reset-password`, {
       method: 'POST',
       credentials: 'include'
     });
@@ -339,7 +339,7 @@ async function deleteStudent(userId, enrollment) {
   if (!confirm(`Are you sure you want to delete student ${enrollment}?\n\nThis will also delete all their complaints.`)) return;
   
   try {
-    const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+    const response = await fetch(`/api/users/${userId}`, {
       method: 'DELETE',
       credentials: 'include'
     });
@@ -363,7 +363,7 @@ async function logout() {
   if (!confirm("Are you sure you want to logout?")) return;
   
   try {
-    await fetch('http://localhost:3000/api/auth/logout', {
+    await fetch('/api/auth/logout', {
       method: 'POST',
       credentials: 'include'
     });

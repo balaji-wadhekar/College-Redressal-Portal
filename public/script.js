@@ -366,14 +366,16 @@ function filterAdminComplaints() {
 }
 
 // ========== PAGE Load INITIALIZATION ==========
-window.onload = function () {
+window.onload = async function () {
   // Check which page we're on and initialize accordingly
   if (window.location.pathname.includes('student.html')) {
-    checkAuth('student');
-    loadComplaints();
-    updateStudentStats();
+    if (await checkAuth('student')) {
+      loadComplaints();
+      updateStudentStats();
+    }
   } else if (window.location.pathname.includes('admin.html')) {
-    checkAuth('admin');
-    loadAdminComplaints();
+    if (await checkAuth('admin')) {
+      loadAdminComplaints();
+    }
   }
 };
