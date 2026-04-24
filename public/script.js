@@ -76,7 +76,7 @@ function logout() {
     localStorage.removeItem("role");
     localStorage.removeItem("email");
     localStorage.removeItem("enrollment");
-    window.location.href = "index.html";
+    window.location.href = "/";
   }
 }
 
@@ -84,7 +84,7 @@ function logout() {
 function checkAuth(requiredRole) {
   const role = localStorage.getItem("role");
   if (!role || role !== requiredRole) {
-    window.location.href = "index.html";
+    window.location.href = "/";
   }
 }
 

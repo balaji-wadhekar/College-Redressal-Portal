@@ -2,7 +2,7 @@
 async function checkAuth() {
   const role = localStorage.getItem("role");
   if (!role || role !== 'admin') {
-    window.location.href = "index.html";
+    window.location.href = "/";
     return false;
   }
   return true;
@@ -360,10 +360,10 @@ async function logout() {
       credentials: 'include'
     });
     localStorage.clear();
-    window.location.href = "index.html";
+    window.location.href = "/";
   } catch (error) {
     localStorage.clear();
-    window.location.href = "index.html";
+    window.location.href = "/";
   }
 }
 
