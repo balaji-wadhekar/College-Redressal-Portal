@@ -6,11 +6,10 @@ const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
-const pdfLib = require('pdf-parse');
-const mammoth = require('mammoth');
 
-// Configure multer for CSV uploads
-const upload = multer({ dest: 'uploads/' });
+// Use /tmp for temp uploads on Vercel (read-only filesystem except /tmp)
+const tmpDir = process.env.NODE_ENV === 'production' ? '/tmp' : 'uploads/';
+const upload = multer({ dest: tmpDir });
 
 // Middleware to check if user is admin
 const isAdmin = (req, res, next) => {
@@ -162,9 +161,17 @@ router.post('/upload-document', upload.single('document'), async (req, res) => {
         let documentText = "";
 
         if (req.file.mimetype === 'application/pdf') {
-            const fileSystem = require('fs');
-            const dataBuffer = fileSystem.readFileSync(req.file.path);
-            const pdfPkg = require('pdf-parse');
+            // Lazy-load pdf-parse only when needed (crashes on Vercel at top-level import)
+            let pdfPkg;
+            try {
+                pdfPkg = require('pdf-parse');
+            } catch (e) {
+                console.error('pdf-parse not available in this environment:', e.message);
+                fs.unlinkSync(req.file.path);
+                return res.status(500).json({ error: 'PDF parsing is not supported in this deployment environment. Please upload a CSV file instead.' });
+            }
+
+            const dataBuffer = fs.readFileSync(req.file.path);
 
             if (pdfPkg.PDFParse) {
                 // Handle breaking changes in pdf-parse v2+
