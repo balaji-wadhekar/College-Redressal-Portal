@@ -103,112 +103,138 @@ async function checkAuth(requiredRole) {
 }
 
 // ========== STUDENT FUNCTIONS ==========
-function submitComplaint(event) {
+async function submitComplaint(event) {
   event.preventDefault();
 
-  let title = document.getElementById("title").value.trim();
-  let category = document.getElementById("category").value;
-  let desc = document.getElementById("description").value.trim();
+  const title = document.getElementById("title").value.trim();
+  const category = document.getElementById("category").value;
+  const description = document.getElementById("description").value.trim();
+  const docFile = document.getElementById("docFile").files[0];
+  const solutionText = document.getElementById("solutionText").value.trim();
+  const department = document.getElementById("studentDept").value;
+  const phone = document.getElementById("studentPhone").value;
 
-  if (!title || !category || !desc) {
-    showAlert('complaintAlert', 'Please fill all fields!', 'error');
+  if (!title || !category || !description) {
+    showAlert('complaintAlert', 'Please fill all mandatory fields!', 'error');
     return;
   }
 
-  let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
-  let newComplaint = {
-    id: generateId(),
-    title: title,
-    category: category,
-    description: desc,
-    status: "Pending",
-    date: new Date().toISOString(),
-    studentEmail: localStorage.getItem("email")
-  };
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('category', category);
+  formData.append('description', description);
+  formData.append('department', department);
+  formData.append('phone', phone);
+  formData.append('expectedSolution', solutionText);
+  if (docFile) {
+    formData.append('document', docFile);
+  }
 
-  complaints.push(newComplaint);
-  localStorage.setItem("complaints", JSON.stringify(complaints));
+  try {
+    showAlert('complaintAlert', '⏳ Submitting grievance...', 'success');
+    const result = await api.createComplaint(formData);
 
-  showAlert('complaintAlert', '✅ Complaint submitted successfully!', 'success');
-
-  document.getElementById("complaintForm").reset();
-  loadComplaints();
-  updateStudentStats();
+    if (result.success) {
+      showAlert('complaintAlert', '✅ Grievance submitted successfully!', 'success');
+      document.getElementById("complaintForm").reset();
+      loadComplaints();
+      updateStudentStats();
+    } else {
+      showAlert('complaintAlert', result.error || 'Failed to submit grievance', 'error');
+    }
+  } catch (error) {
+    console.error('Submit error:', error);
+    showAlert('complaintAlert', 'Failed to submit. Please try again.', 'error');
+  }
 }
 
-function loadComplaints() {
-  let table = document.getElementById("complaintTable")?.getElementsByTagName("tbody")[0];
+async function loadComplaints() {
+  const table = document.getElementById("complaintTable")?.getElementsByTagName("tbody")[0];
   if (!table) return;
 
-  let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
-  let studentEmail = localStorage.getItem("email");
+  try {
+    const result = await api.getComplaints();
+    if (!result.success) return;
 
-  // Filter complaints for current student
-  let myComplaints = complaints.filter(c => c.studentEmail === studentEmail);
+    const complaints = result.data;
+    table.innerHTML = "";
 
-  table.innerHTML = "";
+    if (complaints.length === 0) {
+      document.getElementById("emptyState").style.display = "block";
+      document.querySelector(".table-container").style.display = "none";
+      return;
+    }
 
-  if (myComplaints.length === 0) {
-    document.getElementById("emptyState").style.display = "block";
-    document.querySelector(".table-container").style.display = "none";
-    return;
+    document.getElementById("emptyState").style.display = "none";
+    document.querySelector(".table-container").style.display = "block";
+
+    complaints.forEach((c) => {
+      const statusClass = c.status.toLowerCase().replace(' ', '-');
+      const row = `<tr>
+                  <td><strong>#${(c._id || '').substr(-6)}</strong></td>
+                  <td>${c.title}</td>
+                  <td>${new Date(c.incidentDate || c.createdAt).toLocaleDateString()}</td>
+                  <td>${c.category}</td>
+                  <td style="max-width: 250px;">${c.description}</td>
+                  <td><span class="status ${statusClass}">${c.status}</span></td>
+                  <td>${formatDate(c.createdAt)}</td>
+                  <td>
+                    <button class="secondary" onclick="viewComplaint('${c._id}')">View</button>
+                    ${c.status === 'Pending' ? `<button class="danger" onclick="deleteComplaint('${c._id}')">Delete</button>` : ''}
+                  </td>
+                </tr>`;
+      table.innerHTML += row;
+    });
+
+    filterComplaints();
+  } catch (error) {
+    console.error('Load complaints error:', error);
   }
-
-  document.getElementById("emptyState").style.display = "none";
-  document.querySelector(".table-container").style.display = "block";
-
-  // Sort by date (newest first)
-  myComplaints.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  myComplaints.forEach((c, index) => {
-    let statusClass = c.status.toLowerCase().replace(' ', '-');
-    let row = `<tr>
-                <td><strong>#${c.id.substr(0, 6)}</strong></td>
-                <td>${c.title}</td>
-                <td>${c.category}</td>
-                <td style="max-width: 300px;">${c.description}</td>
-                <td><span class="status ${statusClass}">${c.status}</span></td>
-                <td>${formatDate(c.date)}</td>
-                <td>
-                  ${c.status === 'Pending' ? `<button class="danger" onclick="deleteComplaint('${c.id}')">Delete</button>` : '<span style="color: #999;">-</span>'}
-                </td>
-              </tr>`;
-    table.innerHTML += row;
-  });
-
-  // Apply filters if any
-  filterComplaints();
 }
 
-function deleteComplaint(id) {
-  if (!confirm("Are you sure you want to delete this complaint?")) return;
+async function deleteComplaint(id) {
+  if (!confirm("Are you sure you want to delete this grievance?")) return;
 
-  let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
-  complaints = complaints.filter(c => c.id !== id);
-  localStorage.setItem("complaints", JSON.stringify(complaints));
-
-  showAlert('complaintAlert', 'Complaint deleted successfully!', 'success');
-  loadComplaints();
-  updateStudentStats();
+  try {
+    const result = await api.deleteComplaint(id);
+    if (result.success) {
+      showAlert('complaintAlert', '✅ Grievance deleted successfully!', 'success');
+      if (window.location.pathname.includes('admin.html')) {
+        loadAdminComplaints();
+      } else {
+        loadComplaints();
+        updateStudentStats();
+      }
+    } else {
+      alert(result.error || 'Failed to delete grievance');
+    }
+  } catch (error) {
+    console.error('Delete error:', error);
+    alert('Failed to delete grievance');
+  }
 }
 
-function updateStudentStats() {
-  let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
-  let studentEmail = localStorage.getItem("email");
-  let myComplaints = complaints.filter(c => c.studentEmail === studentEmail);
+async function updateStudentStats() {
+  try {
+    const result = await api.getComplaints();
+    if (!result.success) return;
 
-  let total = myComplaints.length;
-  let pending = myComplaints.filter(c => c.status === "Pending" || c.status === "In Progress").length;
-  let resolved = myComplaints.filter(c => c.status === "Resolved").length;
+    const complaints = result.data;
+    const total = complaints.length;
+    const pending = complaints.filter(c => c.status === "Pending" || c.status === "In Progress").length;
+    const resolved = complaints.filter(c => c.status === "Resolved").length;
 
-  if (document.getElementById("totalComplaints")) {
-    document.getElementById("totalComplaints").textContent = total;
-  }
-  if (document.getElementById("pendingComplaints")) {
-    document.getElementById("pendingComplaints").textContent = pending;
-  }
-  if (document.getElementById("resolvedComplaints")) {
-    document.getElementById("resolvedComplaints").textContent = resolved;
+    if (document.getElementById("totalComplaints")) {
+      document.getElementById("totalComplaints").textContent = total;
+    }
+    if (document.getElementById("pendingComplaints")) {
+      document.getElementById("pendingComplaints").textContent = pending;
+    }
+    if (document.getElementById("resolvedComplaints")) {
+      document.getElementById("resolvedComplaints").textContent = resolved;
+    }
+  } catch (error) {
+    console.error('Stats error:', error);
   }
 }
 
@@ -237,107 +263,127 @@ function filterComplaints() {
 }
 
 // ========== ADMIN FUNCTIONS ==========
-function loadAdminComplaints() {
-  let table = document.getElementById("adminTable")?.getElementsByTagName("tbody")[0];
+async function loadAdminComplaints() {
+  const table = document.getElementById("adminTable")?.getElementsByTagName("tbody")[0];
   if (!table) return;
 
-  let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
+  try {
+    const result = await api.getComplaints();
+    if (!result.success) return;
 
-  table.innerHTML = "";
+    const complaints = result.data;
+    table.innerHTML = "";
 
-  if (complaints.length === 0) {
-    document.getElementById("adminEmptyState").style.display = "block";
-    document.querySelector(".table-container").style.display = "none";
-    return;
-  }
+    if (complaints.length === 0) {
+      document.getElementById("adminEmptyState").style.display = "block";
+      document.querySelector(".table-container").style.display = "none";
+      return;
+    }
 
-  document.getElementById("adminEmptyState").style.display = "none";
-  document.querySelector(".table-container").style.display = "block";
+    document.getElementById("adminEmptyState").style.display = "none";
+    document.querySelector(".table-container").style.display = "block";
 
-  // Sort by date (newest first)
-  complaints.sort((a, b) => new Date(b.date) - new Date(a.date));
+    complaints.forEach((c) => {
+      const statusClass = c.status.toLowerCase().replace(' ', '-');
+      const row = `<tr>
+                  <td><strong>#${(c._id || '').substr(-6)}</strong></td>
+                  <td>${c.title}</td>
+                  <td>${c.category}</td>
+                  <td style="max-width: 250px;">${c.description}</td>
+                  <td><span class="status ${statusClass}">${c.status}</span></td>
+                  <td>${formatDate(c.createdAt)}</td>
+                  <td>
+                    <button class="secondary" onclick="viewComplaint('${c._id}')">View</button>
+                    ${c.status !== 'Resolved' ?
+                      `<button class="success" onclick="updateStatus('${c._id}', 'Resolved')">Resolve</button>` : ''}
+                    <button class="danger" onclick="deleteComplaint('${c._id}')">Delete</button>
+                  </td>
+                </tr>`;
+      table.innerHTML += row;
+    });
 
-  complaints.forEach((c, i) => {
-    let statusClass = c.status.toLowerCase().replace(' ', '-');
-    let row = `<tr>
-                <td><strong>#${c.id.substr(0, 6)}</strong></td>
-                <td>${c.title}</td>
-                <td>${c.category}</td>
-                <td style="max-width: 300px;">${c.description}</td>
-                <td><span class="status ${statusClass}">${c.status}</span></td>
-                <td>${formatDate(c.date)}</td>
-                <td>
-                  ${c.status !== 'Resolved' ?
-        `<button class="secondary" onclick="updateStatus(${i}, 'In Progress')">In Progress</button>
-                     <button class="success" onclick="updateStatus(${i}, 'Resolved')">Resolve</button>`
-        : '<span style="color: #28a745; font-weight: 600;">✓ Completed</span>'}
-                </td>
-              </tr>`;
-    table.innerHTML += row;
-  });
-
-  updateAdminStats();
-  updateCategoryStats();
-  filterAdminComplaints();
-}
-
-function updateStatus(index, newStatus) {
-  let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
-  complaints[index].status = newStatus;
-  localStorage.setItem("complaints", JSON.stringify(complaints));
-
-  showAlert('adminAlert', `✅ Complaint marked as ${newStatus}!`, 'success');
-  loadAdminComplaints();
-}
-
-function updateAdminStats() {
-  let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
-
-  let total = complaints.length;
-  let pending = complaints.filter(c => c.status === "Pending").length;
-  let inProgress = complaints.filter(c => c.status === "In Progress").length;
-  let resolved = complaints.filter(c => c.status === "Resolved").length;
-
-  if (document.getElementById("adminTotalComplaints")) {
-    document.getElementById("adminTotalComplaints").textContent = total;
-  }
-  if (document.getElementById("adminPendingComplaints")) {
-    document.getElementById("adminPendingComplaints").textContent = pending;
-  }
-  if (document.getElementById("adminInProgressComplaints")) {
-    document.getElementById("adminInProgressComplaints").textContent = inProgress;
-  }
-  if (document.getElementById("adminResolvedComplaints")) {
-    document.getElementById("adminResolvedComplaints").textContent = resolved;
+    updateAdminStats();
+    updateCategoryStats();
+    filterAdminComplaints();
+  } catch (error) {
+    console.error('Load admin complaints error:', error);
   }
 }
 
-function updateCategoryStats() {
-  let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
-  let categoryContainer = document.getElementById("categoryStats");
+async function updateStatus(id, newStatus) {
+  try {
+    const result = await api.updateComplaintStatus(id, newStatus);
+    if (result.success) {
+      showAlert('adminAlert', `✅ Complaint marked as ${newStatus}!`, 'success');
+      loadAdminComplaints();
+    } else {
+      showAlert('adminAlert', result.error || 'Failed to update status', 'error');
+    }
+  } catch (error) {
+    console.error('Update status error:', error);
+    showAlert('adminAlert', 'Failed to update status', 'error');
+  }
+}
 
-  if (!categoryContainer) return;
+async function updateAdminStats() {
+  try {
+    const result = await api.getComplaints();
+    if (!result.success) return;
 
-  // Count by category
-  let categoryCounts = {};
-  complaints.forEach(c => {
-    categoryCounts[c.category] = (categoryCounts[c.category] || 0) + 1;
-  });
+    const complaints = result.data;
+    const total = complaints.length;
+    const pending = complaints.filter(c => c.status === "Pending").length;
+    const inProgress = complaints.filter(c => c.status === "In Progress").length;
+    const resolved = complaints.filter(c => c.status === "Resolved").length;
 
-  categoryContainer.innerHTML = '';
+    if (document.getElementById("adminTotalComplaints")) {
+      document.getElementById("adminTotalComplaints").textContent = total;
+    }
+    if (document.getElementById("adminPendingComplaints")) {
+      document.getElementById("adminPendingComplaints").textContent = pending;
+    }
+    if (document.getElementById("adminInProgressComplaints")) {
+      document.getElementById("adminInProgressComplaints").textContent = inProgress;
+    }
+    if (document.getElementById("adminResolvedComplaints")) {
+      document.getElementById("adminResolvedComplaints").textContent = resolved;
+    }
+  } catch (error) {
+    console.error('Admin stats error:', error);
+  }
+}
 
-  const colors = ['blue', 'green', 'orange', ''];
-  let colorIndex = 0;
+async function updateCategoryStats() {
+  try {
+    const result = await api.getComplaints();
+    if (!result.success) return;
 
-  for (let category in categoryCounts) {
-    let card = document.createElement('div');
-    card.className = `stat-card ${colors[colorIndex % colors.length]}`;
-    card.innerHTML = `
-      <h4>${category}</h4>
-      <div class="number">${categoryCounts[category]}</div>
-    `;
-    categoryContainer.appendChild(card);
-    colorIndex++;
+    const complaints = result.data;
+    const categoryContainer = document.getElementById("categoryStats");
+    if (!categoryContainer) return;
+
+    // Count by category
+    const categoryCounts = {};
+    complaints.forEach(c => {
+      categoryCounts[c.category] = (categoryCounts[c.category] || 0) + 1;
+    });
+
+    categoryContainer.innerHTML = '';
+    const colors = ['blue', 'green', 'orange', ''];
+    let colorIndex = 0;
+
+    for (const category in categoryCounts) {
+      const card = document.createElement('div');
+      card.className = `stat-card ${colors[colorIndex % colors.length]}`;
+      card.innerHTML = `
+        <h4>${category}</h4>
+        <div class="number">${categoryCounts[category]}</div>
+      `;
+      categoryContainer.appendChild(card);
+      colorIndex++;
+    }
+  } catch (error) {
+    console.error('Category stats error:', error);
   }
 }
 
