@@ -1,14 +1,42 @@
 // API Configuration
 const API_BASE_URL = '/api';
 
+// Helper to get headers with token
+const getHeaders = (isJson = true) => {
+  const headers = {};
+  if (isJson) headers['Content-Type'] = 'application/json';
+  const token = localStorage.getItem('token');
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+};
+
 // API Helper Functions
 const api = {
   // Authentication
   async login(payload) {
     const response = await fetch(`${API_BASE_URL}/auth/admin-login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return await response.json();
+  },
+
+  async requestOtp(enrollmentNumber, email) {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ enrollmentNumber, email })
+    });
+    // This returns HTML/Render if it's the first step, but we want it to be AJAX
+    // For now let's assume the backend was updated to support both or we handle the response
+    return await response.json();
+  },
+
+  async verifyOtp(payload) {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+      method: 'POST',
+      headers: getHeaders(),
       body: JSON.stringify(payload)
     });
     return await response.json();
@@ -17,24 +45,14 @@ const api = {
   async logout() {
     const response = await fetch(`${API_BASE_URL}/auth/logout`, {
       method: 'POST',
-      credentials: 'include'
+      headers: getHeaders()
     });
     return await response.json();
   },
 
   async checkAuth() {
     const response = await fetch(`${API_BASE_URL}/auth/check`, {
-      credentials: 'include'
-    });
-    return await response.json();
-  },
-
-  async register(email, password, role, enrollment) {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password, role, enrollment })
+      headers: getHeaders()
     });
     return await response.json();
   },
@@ -43,8 +61,7 @@ const api = {
   async updateProfile(department) {
     const response = await fetch(`${API_BASE_URL}/users/profile/update`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: getHeaders(),
       body: JSON.stringify({ department })
     });
     return await response.json();
@@ -53,14 +70,14 @@ const api = {
   // Complaints
   async getComplaints() {
     const response = await fetch(`${API_BASE_URL}/complaints`, {
-      credentials: 'include'
+      headers: getHeaders()
     });
     return await response.json();
   },
 
   async getComplaint(id) {
     const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {
-      credentials: 'include'
+      headers: getHeaders()
     });
     return await response.json();
   },
@@ -68,8 +85,8 @@ const api = {
   async createComplaint(formData) {
     const response = await fetch(`${API_BASE_URL}/complaints`, {
       method: 'POST',
-      credentials: 'include',
-      body: formData // allow browser to set Content-Type with boundary
+      headers: getHeaders(false), // Let browser set boundary for multipart
+      body: formData
     });
     return await response.json();
   },
@@ -77,7 +94,7 @@ const api = {
   async updateComplaint(id, formData) {
     const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {
       method: 'PUT',
-      credentials: 'include',
+      headers: getHeaders(false),
       body: formData
     });
     return await response.json();
@@ -86,8 +103,7 @@ const api = {
   async updateComplaintStatus(id, status) {
     const response = await fetch(`${API_BASE_URL}/complaints/${id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: getHeaders(),
       body: JSON.stringify({ status })
     });
     return await response.json();
@@ -96,15 +112,16 @@ const api = {
   async deleteComplaint(id) {
     const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {
       method: 'DELETE',
-      credentials: 'include'
+      headers: getHeaders()
     });
     return await response.json();
   },
 
   async getStats() {
     const response = await fetch(`${API_BASE_URL}/complaints/stats/summary`, {
-      credentials: 'include'
+      headers: getHeaders()
     });
     return await response.json();
   }
 };
+

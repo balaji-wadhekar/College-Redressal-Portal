@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -17,38 +18,39 @@ router.post('/admin-login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.render('auth/login', { error: 'Email and password are required.', activeTab: 'admin' });
+      return res.status(400).json({ success: false, error: 'Email and password are required.' });
     }
     const user = await User.findOne({ email: email.toLowerCase().trim(), role: 'admin' });
     if (!user) {
-      return res.render('auth/login', { error: 'Invalid admin credentials.', activeTab: 'admin' });
+      return res.status(401).json({ success: false, error: 'Invalid admin credentials.' });
     }
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.render('auth/login', { error: 'Invalid admin credentials.', activeTab: 'admin' });
+      return res.status(401).json({ success: false, error: 'Invalid admin credentials.' });
     }
 
-    req.session.userId = user._id;
-    req.session.user = {
-      id: user._id,
-      email: user.email,
-      role: user.role,
-      enrollment: user.enrollment,
-      name: user.name,
-      phone: user.phone
-    };
+    const token = jwt.sign(
+      { userId: user._id, role: user.role, name: user.name, email: user.email, enrollment: user.enrollment },
+      process.env.SESSION_SECRET || 'fallback_secret',
+      { expiresIn: '1d' }
+    );
 
-    // Explicitly save session before redirecting (critical for serverless)
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session save error:', err);
-        return res.render('auth/login', { error: 'Login failed. Please try again.', activeTab: 'admin' });
+    return res.json({ 
+      success: true, 
+      message: "Admin logged in successfully", 
+      token,
+      redirectUrl: '/admin.html',
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        enrollment: user.enrollment,
+        name: user.name
       }
-      res.redirect('/admin.html');
     });
   } catch (error) {
     console.error('Admin login error:', error.message, error.stack);
-    res.render('auth/login', { error: 'Server error during login. Please try again.', activeTab: 'admin' });
+    res.status(500).json({ success: false, error: 'Server error during login.' });
   }
 });
 
@@ -63,9 +65,9 @@ const cleanEnrollment = safeEnrollment ? String(safeEnrollment).toUpperCase().tr
 const cleanEmail = safeEmail ? String(safeEmail).toLowerCase().trim() : '';
 
     if (!cleanEnrollment.startsWith('ADT')) {
-        return res.status(400).render('auth/login', {
-            error: "Enrollment Number must start with 'ADT'.",
-            activeTab: 'student'
+        return res.status(400).json({
+            success: false,
+            error: "Enrollment Number must start with 'ADT'."
         });
     }
 // Generate 4-digit code
@@ -80,9 +82,9 @@ try {
     );
 } catch (error) {
     if (error.code === 11000) {
-        return res.status(400).render('auth/login', {
-            error: "This email is already registered to a different Enrollment Number. Please use your correct enrollment number or email.",
-            activeTab: 'student'
+        return res.status(400).json({
+            success: false,
+            error: "This email is already registered to a different Enrollment Number."
         });
     }
     throw error;
@@ -95,17 +97,17 @@ await transporter.sendMail({
     subject: "Your Portal Login Code",
     html: `<div style="text-align: center; padding: 20px; font-family: Arial;"><h2>Student Login</h2><p>Your 4-Digit Code is:</p><h1 style="color: #003366; letter-spacing: 5px;">${otp}</h1></div>`
 });
-// Render OTP field
-res.render('auth/login', {
-  success: `Code sent to ${user.email}`,
-    showOtpField: true,
-    enrollmentNumber: cleanEnrollment,
-    email: cleanEmail,
-    activeTab: 'student'
+// Return JSON success
+res.json({
+  success: true,
+  message: `Code sent to ${user.email}`,
+  showOtpField: true,
+  enrollmentNumber: cleanEnrollment,
+  email: cleanEmail
 });
 } catch (err) {
 console.error(err);
-res.status(500).render('auth/login', { error: "Server error sending code.", activeTab: 'student' });
+res.status(500).json({ success: false, error: "Server error sending code." });
 }
 
 });
@@ -128,27 +130,36 @@ enrollment: cleanEnrollment, email: cleanEmail, role: 'student', otp: cleanOtp, 
 });
 
 if (!user) {
-    return res.status(400).render('auth/login', {
-        error: "Invalid or expired code. Please try again.",
-        showOtpField: true, enrollmentNumber, email, activeTab: 'student'
+    return res.status(400).json({
+        success: false,
+        error: "Invalid or expired code. Please try again."
     });
 }
-// Success - Log in
-user.otp = null; user.otpExpires = null; await user.save();
-req.session.userId = user._id;
-req.session.role = 'student';
-req.session.user = {
-  id: user._id,
-  email: user.email,
-  role: user.role,
-  enrollment: user.enrollment,
-  name: user.name,
-  phone: user.phone
-};
-req.session.save(() => { res.redirect('/student.html'); });
+    // Success - Log in
+    user.otp = null; user.otpExpires = null; await user.save();
+    
+    const token = jwt.sign(
+      { userId: user._id, role: user.role, name: user.name, email: user.email, enrollment: user.enrollment },
+      process.env.SESSION_SECRET || 'fallback_secret',
+      { expiresIn: '1d' }
+    );
+
+    return res.json({ 
+      success: true, 
+      message: "Student logged in successfully", 
+      token,
+      redirectUrl: '/student.html',
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        enrollment: user.enrollment,
+        name: user.name
+      }
+    });
 } catch (err) {
 console.error(err);
-res.status(500).render('auth/login', { error: "Server error verifying code.", activeTab: 'student' });
+res.status(500).json({ success: false, error: "Server error verifying code." });
 }
 
 });
@@ -160,37 +171,39 @@ router.get('/login', (req, res) => {
 
 // Logout
 router.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to logout' });
-    }
-    res.json({ success: true, message: 'Logged out successfully' });
-  });
+  // Frontend handles clearing localStorage, backend just confirms
+  res.json({ success: true, message: 'Logged out successfully' });
 });
 
-// Check session
+// Check session (JWT version)
 router.get('/check', async (req, res) => {
-  if (req.session.user) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) return res.json({ authenticated: false });
+
+  jwt.verify(token, process.env.SESSION_SECRET || 'fallback_secret', async (err, decoded) => {
+    if (err) return res.json({ authenticated: false });
+    
     try {
-      const user = await User.findById(req.session.user.id);
+      const user = await User.findById(decoded.userId);
       if (user) {
-        req.session.user = {
-          id: user._id,
-          email: user.email,
-          role: user.role,
-          enrollment: user.enrollment,
-          name: user.name,
-          phone: user.phone
-        };
-        return res.json({ authenticated: true, user: req.session.user });
+        return res.json({ 
+          authenticated: true, 
+          user: {
+            id: user._id,
+            email: user.email,
+            role: user.role,
+            enrollment: user.enrollment,
+            name: user.name
+          } 
+        });
       }
-    } catch (err) {
-      console.error('Session check DB error:', err);
+    } catch (e) {
+      console.error('JWT check DB error:', e);
     }
-    res.json({ authenticated: true, user: req.session.user });
-  } else {
     res.json({ authenticated: false });
-  }
+  });
 });
 
 module.exports = router;

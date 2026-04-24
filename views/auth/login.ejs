@@ -39,7 +39,7 @@
       <% } %>
 
       <div id="student-section">
-      <form action="/api/auth/login" method="POST" class="space-y-4">
+      <form id="studentLoginForm" onsubmit="event.submitter && event.submitter.id === 'btn-verify' ? handleVerifyOtp(event) : handleStudentLogin(event)" class="space-y-4">
       <% if (typeof showOtpField !== 'undefined' && showOtpField) { %>
               <input type="hidden" name="enrollmentNumber" value="<%= enrollmentNumber %>">
               <input type="hidden" name="email" value="<%= email %>">
@@ -49,7 +49,7 @@
                          class="w-full border border-gray-300 p-4 rounded bg-blue-50 focus:outline-none focus:ring-2 focus:ring-[#003366] text-center text-3xl tracking-[1em] font-mono" 
                          placeholder="••••">
               </div>
-              <button type="submit" formaction="/api/auth/verify-otp" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow-md mt-2">
+              <button type="submit" id="btn-verify" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow-md mt-2">
                   VERIFY & ENTER PORTAL
               </button>
       <% } else { %>
@@ -63,7 +63,7 @@
                          class="w-full border border-gray-300 p-3 rounded bg-blue-50 focus:outline-none focus:ring-2 focus:ring-[#003366]" 
                          placeholder="Registered Email">
               </div>
-              <button type="submit" class="w-full bg-[#003366] hover:bg-blue-800 text-white font-bold py-3 px-4 rounded shadow-md mt-2">
+              <button type="submit" id="btn-request" class="w-full bg-[#003366] hover:bg-blue-800 text-white font-bold py-3 px-4 rounded shadow-md mt-2">
                   SEND LOGIN CODE
               </button>
       <% } %>
@@ -71,7 +71,7 @@
       </div>
 
       <div id="admin-section" style="display: none;">
-          <form action="/api/auth/admin-login" method="POST" class="space-y-4">
+          <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" class="space-y-4">
               <div>
                   <input type="email" name="email" required 
                          class="w-full border border-gray-300 p-3 rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-600" 

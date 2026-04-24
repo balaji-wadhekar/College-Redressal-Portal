@@ -31,37 +31,37 @@ function generateId() {
 }
 
 // ========== LOGIN ==========
-async function login(event) {
+async function handleAdminLogin(event) {
   event.preventDefault();
 
-  const enrollment = document.getElementById("enrollment").value.trim();
-  const pass = document.getElementById("password").value;
+  const formData = new FormData(event.target);
+  const payload = Object.fromEntries(formData.entries());
 
   // 1. Frontend Validation
-  if (!enrollment || !pass) {
+  if (!payload.email || !payload.password) {
     showAlert('alertContainer', 'Please fill in all fields!', 'error');
     return;
   }
 
   // 2. Submit to Backend
   try {
-    const result = await api.login(enrollment, pass);
+    const result = await api.login(payload);
 
     if (result.error) {
       showAlert('alertContainer', result.error, 'error');
       return;
     }
 
-    // Login Success
-    localStorage.setItem("role", result.user?.role || "student");
-    localStorage.setItem("email", result.user?.email || "");
-    localStorage.setItem("enrollment", result.user?.enrollment || enrollment);
-
-    if (result.user?.role === 'admin') {
-      window.location.href = "admin.html";
-    } else {
-      window.location.href = "student.html";
+    // Login Success - Task 2: Save token FIRST, navigate SECOND
+    if (result.token) {
+      localStorage.setItem("token", result.token);
     }
+    localStorage.setItem("role", result.user?.role || "admin");
+    localStorage.setItem("email", result.user?.email || "");
+    localStorage.setItem("enrollment", result.user?.enrollment || "");
+
+    // Redirect using the URL from backend
+    window.location.href = result.redirectUrl || (result.user?.role === 'admin' ? "admin.html" : "student.html");
 
   } catch (error) {
     console.error(error);
@@ -69,36 +69,123 @@ async function login(event) {
   }
 }
 
+async function handleStudentLogin(event) {
+  event.preventDefault();
+  const enrollmentNumber = event.target.enrollmentNumber.value;
+  const email = event.target.email.value;
+
+  try {
+    const result = await api.requestOtp(enrollmentNumber, email);
+    if (result.success) {
+      // Update UI to show OTP field without reloading (Stateless JWT Flow)
+      const form = document.getElementById('studentLoginForm');
+      if (form) {
+        form.innerHTML = `
+          <input type="hidden" name="enrollmentNumber" value="${result.enrollmentNumber}">
+          <input type="hidden" name="email" value="${result.email}">
+          <div>
+              <p class="text-sm font-bold text-[#003366] text-center mb-2">Enter 4-Digit Code</p>
+              <input type="text" name="otp" required pattern="\\d{4}" maxlength="4" autocomplete="off"
+                     class="w-full border border-gray-300 p-4 rounded bg-blue-50 focus:outline-none focus:ring-2 focus:ring-[#003366] text-center text-3xl tracking-[1em] font-mono" 
+                     placeholder="••••">
+          </div>
+          <button type="submit" id="btn-verify" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow-md mt-2">
+              VERIFY & ENTER PORTAL
+          </button>
+        `;
+      }
+      showAlert('alertContainer', result.message, 'success');
+    } else {
+      showAlert('alertContainer', result.error || "Failed to send code", 'error');
+    }
+  } catch (e) {
+    console.error(e);
+    showAlert('alertContainer', "Connection error. Please try again.", 'error');
+  }
+}
+
+async function handleVerifyOtp(event) {
+  event.preventDefault();
+  const formData = new FormData(event.target);
+  const payload = Object.fromEntries(formData.entries());
+
+  try {
+    const result = await api.verifyOtp(payload);
+    if (result.success && result.token) {
+      // Task 2: Save token FIRST
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("role", result.user.role);
+      localStorage.setItem("email", result.user.email);
+      localStorage.setItem("enrollment", result.user.enrollment);
+      
+      // Navigate SECOND
+      window.location.href = result.redirectUrl || (result.user.role === 'admin' ? "admin.html" : "student.html");
+    } else {
+      showAlert('alertContainer', result.error || "Verification failed", 'error');
+    }
+  } catch (e) {
+    console.error(e);
+    showAlert('alertContainer', "Connection error during verification", 'error');
+  }
+}
+
 
 // ========== LOGOUT ==========
 function logout() {
   if (confirm("Are you sure you want to logout?")) {
+    localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("email");
     localStorage.removeItem("enrollment");
+    localStorage.removeItem("name");
     window.location.href = "/";
   }
 }
 
 // ========== CHECK AUTH ==========
 async function checkAuth(requiredRole) {
+  // Task 3: Immediately check for the token
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.log('No token found, redirecting to login...');
+    window.location.href = "/"; // Kick out to login if no token
+    return false;
+  }
+
   try {
-    const authData = await fetch('/api/auth/check').then(res => res.json());
+    const authData = await api.checkAuth();
     if (!authData.authenticated || authData.user.role !== requiredRole) {
       window.location.href = "/";
       return false;
     }
-    // Repopulate localStorage
-    localStorage.setItem("role", authData.user.role);
-    localStorage.setItem("email", authData.user.email);
-    localStorage.setItem("enrollment", authData.user.enrollment);
-    if(authData.user.name) {
-       localStorage.setItem("name", authData.user.name);
-    }
+    
+    // Synchronize UI and localStorage
+    updateUserUI(authData.user);
+    
     return true;
   } catch(e) {
+    console.error('Auth check error:', e);
     window.location.href = "/";
     return false;
+  }
+}
+
+function updateUserUI(user) {
+  // Sync localStorage
+  localStorage.setItem("role", user.role || "");
+  localStorage.setItem("email", user.email || "");
+  localStorage.setItem("enrollment", user.enrollment || "");
+  if (user.name) localStorage.setItem("name", user.name);
+
+  // Auto-populate fields on Student Dashboard (as requested: Enrollment and Email only)
+  const enrollmentField = document.getElementById("studentEnrollment");
+  const emailField = document.getElementById("studentEmail");
+
+  if (enrollmentField) {
+    enrollmentField.value = user.enrollment || "";
+  }
+  if (emailField) {
+    emailField.value = user.email || "";
   }
 }
 

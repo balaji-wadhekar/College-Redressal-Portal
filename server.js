@@ -1,7 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
 const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/database');
@@ -23,23 +21,9 @@ app.use(cors({
   credentials: true
 }));
 
-// Session configuration
-const isProduction = process.env.NODE_ENV === 'production';
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'grievance-portal-secret',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    collectionName: 'sessions'
-  }),
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24, // 24 hours
-    httpOnly: true,
-    secure: isProduction, // true on Vercel (HTTPS), false locally (HTTP)
-    sameSite: isProduction ? 'none' : 'lax'
-  }
-}));
+// MUST be before other middleware if using trust proxy
+app.set('trust proxy', 1);
+
 
 // Serve static files from public/
 app.use(express.static(path.join(__dirname, 'public')));
@@ -47,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/complaints', require('./routes/complaints'));
-app.use('/api/users', require('./routes/users'));
+
 app.use('/admin', require('./routes/admin'));
 app.use('/student', require('./routes/student'));
 
@@ -64,9 +48,7 @@ app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-app.get('/manage-users.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'manage-users.html'));
-});
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -77,9 +59,8 @@ app.use((err, req, res, next) => {
 // Start server only when running directly (not on Vercel)
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
-    console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
   });
 }
 

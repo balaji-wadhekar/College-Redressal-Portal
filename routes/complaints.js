@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const { sendStatusUpdateEmail, transporter } = require('../utils/emailService');
 const { uploadToCloudinary } = require('../config/cloudinary');
+const jwt = require('jsonwebtoken');
 
 // Use memory storage — no disk writes (required for Vercel)
 const upload = multer({
@@ -12,20 +13,26 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-// Middleware to check if user is authenticated
+// Middleware to check if user is authenticated (JWT version)
 const isAuthenticated = (req, res, next) => {
-  if (!req.session.user) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  next();
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+
+  jwt.verify(token, process.env.SESSION_SECRET || 'fallback_secret', (err, decoded) => {
+    if (err) return res.status(403).json({ error: 'Forbidden' });
+    req.user = decoded;
+    next();
+  });
 };
 
 // Get all complaints (filtered by role)
 router.get('/', isAuthenticated, async (req, res) => {
   try {
     let query = {};
-    if (req.session.user.role === 'student') {
-      query.studentId = req.session.user.id;
+    if (req.user.role === 'student') {
+      query.studentId = req.user.userId;
     }
 
     const complaints = await Complaint.find(query).sort({ createdAt: -1 });
@@ -49,7 +56,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Complaint not found' });
     }
 
-    if (req.session.user.role !== 'admin' && complaint.studentId.toString() !== req.session.user.id) {
+    if (req.user.role !== 'admin' && complaint.studentId.toString() !== req.user.userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -63,7 +70,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 // Create new complaint (student only)
 router.post('/', isAuthenticated, upload.single('docFile'), async (req, res) => {
   try {
-    if (req.session.user.role !== 'student') {
+    if (req.user.role !== 'student') {
       return res.status(403).json({ error: 'Only students can file complaints' });
     }
 
@@ -101,8 +108,8 @@ router.post('/', isAuthenticated, upload.single('docFile'), async (req, res) => 
       category,
       description,
       incidentDate,
-      studentEmail: studentEmail || req.session.user.email,
-      studentId: req.session.user.id,
+      studentEmail: studentEmail || req.user.email,
+      studentId: req.user.userId,
       studentName,
       studentPhone,
       studentEnrollment,
@@ -166,8 +173,8 @@ router.post('/', isAuthenticated, upload.single('docFile'), async (req, res) => 
     </div>
         <div style="padding: 20px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">
             <h3 style="color: #374151; margin-top: 0; border-bottom: 2px solid #d1d5db; padding-bottom: 5px;">1. Student Information</h3>
-            <p><strong>Name:</strong> ${req.session.user ? req.session.user.name : 'System User'}</p>
-            <p><strong>Enrollment Number:</strong> ${req.session.user ? req.session.user.enrollment : 'Unknown'}</p>
+            <p><strong>Name:</strong> ${req.user ? req.user.name : 'System User'}</p>
+            <p><strong>Enrollment Number:</strong> ${req.user ? req.user.enrollment : 'Unknown'}</p>
             <p><strong>Submission Date:</strong> ${new Date().toLocaleString()}</p>
         </div>
         <div style="padding: 20px; background-color: white;">
@@ -187,7 +194,7 @@ router.post('/', isAuthenticated, upload.single('docFile'), async (req, res) => 
       await transporter.sendMail({
         from: '"MIT Grievance Portal" <no-reply@college.edu>',
         to: targetAdminEmail,
-        subject: `[${category}] ${title || 'New Grievance'} - ${req.session.user ? req.session.user.enrollment : ''}`,
+        subject: `[${category}] ${title || 'New Grievance'} - ${req.user ? req.user.enrollment : ''}`,
         html: emailHTML
         // No attachments needed — images are embedded via Cloudinary URLs
       });
@@ -211,7 +218,7 @@ router.post('/', isAuthenticated, upload.single('docFile'), async (req, res) => 
 // Update complaint status (admin only)
 router.patch('/:id/status', isAuthenticated, async (req, res) => {
   try {
-    if (req.session.user.role !== 'admin') {
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Only admins can update status' });
     }
 
@@ -264,7 +271,7 @@ router.patch('/:id/status', isAuthenticated, async (req, res) => {
 // Update an existing complaint (student only, and only if pending)
 router.put('/:id', isAuthenticated, upload.single('docFile'), async (req, res) => {
   try {
-    if (req.session.user.role !== 'student') {
+    if (req.user.role !== 'student') {
       return res.status(403).json({ error: 'Only students can edit complaints' });
     }
 
@@ -274,7 +281,7 @@ router.put('/:id', isAuthenticated, upload.single('docFile'), async (req, res) =
       return res.status(404).json({ error: 'Complaint not found' });
     }
 
-    if (complaint.studentId.toString() !== req.session.user.id) {
+    if (complaint.studentId.toString() !== req.user.userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -351,8 +358,8 @@ router.put('/:id', isAuthenticated, upload.single('docFile'), async (req, res) =
           </div>
           <div style="padding: 20px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">
               <h3 style="color: #374151; margin-top: 0; border-bottom: 2px solid #d1d5db; padding-bottom: 5px;">1. Student Information</h3>
-              <p><strong>Name:</strong> ${req.session.user ? req.session.user.name : 'System User'}</p>
-              <p><strong>Enrollment Number:</strong> ${req.session.user ? req.session.user.enrollment : 'Unknown'}</p>
+              <p><strong>Name:</strong> ${req.user ? req.user.name : 'System User'}</p>
+              <p><strong>Enrollment Number:</strong> ${req.user ? req.user.enrollment : 'Unknown'}</p>
               <p><strong>Last Modified:</strong> ${new Date().toLocaleString()}</p>
           </div>
           <div style="padding: 20px; background-color: white;">
@@ -372,7 +379,7 @@ router.put('/:id', isAuthenticated, upload.single('docFile'), async (req, res) =
       await transporter.sendMail({
         from: '"MIT Grievance Portal" <no-reply@college.edu>',
         to: targetAdminEmail,
-        subject: `[UPDATED] ${complaint.title || 'Grievance Update'} - ${req.session.user ? req.session.user.enrollment : ''}`,
+        subject: `[UPDATED] ${complaint.title || 'Grievance Update'} - ${req.user ? req.user.enrollment : ''}`,
         html: emailHTML
       });
       console.log(`✅ Routed UPDATE email to: ${targetAdminEmail}`);
@@ -401,8 +408,8 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Complaint not found' });
     }
 
-    if (req.session.user.role !== 'admin' &&
-      complaint.studentEmail !== req.session.user.email) {
+    if (req.user.role !== 'admin' &&
+      complaint.studentEmail !== req.user.email) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -430,8 +437,8 @@ router.get('/stats/summary', isAuthenticated, async (req, res) => {
   try {
     let query = {};
 
-    if (req.session.user.role === 'student') {
-      query.studentEmail = req.session.user.email;
+    if (req.user.role === 'student') {
+      query.studentEmail = req.user.email;
     }
 
     const complaints = await Complaint.find(query);
