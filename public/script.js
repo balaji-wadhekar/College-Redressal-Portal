@@ -81,10 +81,24 @@ function logout() {
 }
 
 // ========== CHECK AUTH ==========
-function checkAuth(requiredRole) {
-  const role = localStorage.getItem("role");
-  if (!role || role !== requiredRole) {
+async function checkAuth(requiredRole) {
+  try {
+    const authData = await fetch('/api/auth/check').then(res => res.json());
+    if (!authData.authenticated || authData.user.role !== requiredRole) {
+      window.location.href = "/";
+      return false;
+    }
+    // Repopulate localStorage
+    localStorage.setItem("role", authData.user.role);
+    localStorage.setItem("email", authData.user.email);
+    localStorage.setItem("enrollment", authData.user.enrollment);
+    if(authData.user.name) {
+       localStorage.setItem("name", authData.user.name);
+    }
+    return true;
+  } catch(e) {
     window.location.href = "/";
+    return false;
   }
 }
 

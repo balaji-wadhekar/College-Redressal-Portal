@@ -1,11 +1,19 @@
 // Check auth
 async function checkAuth() {
-  const role = localStorage.getItem("role");
-  if (!role || role !== 'admin') {
+  try {
+    const authData = await fetch('/api/auth/check').then(res => res.json());
+    if (!authData.authenticated || authData.user.role !== 'admin') {
+      window.location.href = "/";
+      return false;
+    }
+    // Repopulate localStorage for frontend logic
+    localStorage.setItem("role", authData.user.role);
+    localStorage.setItem("email", authData.user.email);
+    return true;
+  } catch (e) {
     window.location.href = "/";
     return false;
   }
-  return true;
 }
 
 // Show alert
