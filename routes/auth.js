@@ -17,15 +17,15 @@ router.post('/admin-login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required for admin login' });
+      return res.render('auth/login', { error: 'Email and password are required.', activeTab: 'admin' });
     }
     const user = await User.findOne({ email: email.toLowerCase().trim(), role: 'admin' });
     if (!user) {
-      return res.status(401).json({ error: 'Invalid admin credentials' });
+      return res.render('auth/login', { error: 'Invalid admin credentials.', activeTab: 'admin' });
     }
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-       return res.status(401).json({ error: 'Invalid admin credentials' });
+      return res.render('auth/login', { error: 'Invalid admin credentials.', activeTab: 'admin' });
     }
 
     req.session.userId = user._id;
@@ -38,20 +38,17 @@ router.post('/admin-login', async (req, res) => {
       phone: user.phone
     };
 
-    return res.json({
-      success: true,
-      redirect: '/admin/dashboard',
-      user: {
-        email: user.email,
-        role: user.role,
-        enrollment: user.enrollment,
-        name: user.name,
-        phone: user.phone
+    // Explicitly save session before redirecting (critical for serverless)
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.render('auth/login', { error: 'Login failed. Please try again.', activeTab: 'admin' });
       }
+      res.redirect('/admin.html');
     });
   } catch (error) {
-    console.error('Admin login error:', error);
-    res.status(500).json({ error: 'Server error during login' });
+    console.error('Admin login error:', error.message, error.stack);
+    res.render('auth/login', { error: 'Server error during login. Please try again.', activeTab: 'admin' });
   }
 });
 
