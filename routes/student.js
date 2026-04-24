@@ -1,25 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const Grievance = require('../models/Complaint'); // Using Complaint model but named Grievance
-const mult = require('multer');
+const multer = require('multer');
 const path = require('path');
+const { uploadToCloudinary } = require('../config/cloudinary');
 
-const storage = mult.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
+// Use memory storage for Vercel
+const upload = multer({ 
+  storage: multer.memoryStorage(), 
+  limits: { fileSize: 5 * 1024 * 1024 } 
 });
-const upload = mult({ storage: storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 // Dashboard
 router.get('/dashboard', async (req, res) => {
   try {
-    // Basic mock dashboard if student email isn't in session or similar.
-    // Assuming session has user
     let query = {};
     if (req.session && req.session.user) {
         query.studentEmail = req.session.user.email;
@@ -51,7 +45,13 @@ router.post('/grievance/:id/edit', upload.single('document'), async (req, res) =
   const updateData = { title, category, description };
 
   if (req.file) {
-      updateData.docPath = req.file.filename; // Update file if a new one is uploaded
+      try {
+        const result = await uploadToCloudinary(req.file.buffer, 'grievance-portal/docs', req.file.originalname);
+        updateData.docPath = result.secure_url;
+        updateData.docPublicId = result.public_id;
+      } catch (uploadErr) {
+        console.error('Cloudinary upload error:', uploadErr);
+      }
   }
   await Grievance.findByIdAndUpdate(req.params.id, updateData);
   res.redirect('/student/grievance/' + req.params.id);

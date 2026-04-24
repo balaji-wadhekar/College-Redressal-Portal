@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const cors = require('cors');
@@ -8,12 +7,6 @@ const path = require('path');
 const connectDB = require('./config/database');
 
 const app = express();
-
-// Create uploads directory if it doesn't exist
-const uploadDir = path.join(__dirname, 'uploads');
-if (!require('fs').existsSync(uploadDir)) {
-  require('fs').mkdirSync(uploadDir);
-}
 
 // Connect to MongoDB
 connectDB();
@@ -31,6 +24,7 @@ app.use(cors({
 }));
 
 // Session configuration
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(session({
   secret: process.env.SESSION_SECRET || 'grievance-portal-secret',
   resave: false,
@@ -42,14 +36,13 @@ app.use(session({
   cookie: {
     maxAge: 1000 * 60 * 60 * 24, // 24 hours
     httpOnly: true,
-    secure: false // MUST BE FALSE FOR HTTP IP ADDRESS ACCESS
+    secure: isProduction, // true on Vercel (HTTPS), false locally (HTTP)
+    sameSite: isProduction ? 'none' : 'lax'
   }
 }));
 
-// Serve static files
-app.use(express.static('public'));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(path.join(__dirname)));
+// Serve static files from public/
+app.use(express.static(path.join(__dirname, 'public')));
 
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -64,15 +57,15 @@ app.get('/', (req, res) => {
 });
 
 app.get('/student.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'student.html'));
+  res.sendFile(path.join(__dirname, 'public', 'student.html'));
 });
 
 app.get('/admin.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.get('/manage-users.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'manage-users.html'));
+  res.sendFile(path.join(__dirname, 'public', 'manage-users.html'));
 });
 
 // Error handling middleware
@@ -81,9 +74,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-const PORT = process.env.PORT || 3000;
+// Start server only when running directly (not on Vercel)
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+    console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Export app for Vercel serverless
+module.exports = app;

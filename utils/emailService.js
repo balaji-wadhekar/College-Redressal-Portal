@@ -4,19 +4,23 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: process.env.EMAIL_USER || 'dummy@gmail.com',
+    pass: process.env.EMAIL_PASS || 'dummy'
   }
 });
 
 // === AGGRESSIVE LOGGING: Check if credentials are correct at server launch ===
-transporter.verify(function (error, success) {
-  if (error) {
-    console.log('Transporter Error:', error);
-  } else {
-    console.log('Server is ready to take our messages');
-  }
-});
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.log('Transporter Error:', error);
+    } else {
+      console.log('Server is ready to take our messages');
+    }
+  });
+} else {
+  console.log('Email credentials missing in .env - Email service running in Mock Mode');
+}
 // ============================================================================
 
 /**
