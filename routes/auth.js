@@ -18,15 +18,21 @@ router.post('/admin-login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Email and password are required.' });
+      res.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Email and password are required.' }));
     }
     const user = await User.findOne({ email: email.toLowerCase().trim(), role: 'admin' });
     if (!user) {
-      return res.status(401).json({ success: false, error: 'Invalid admin credentials.' });
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Invalid admin credentials.' }));
     }
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, error: 'Invalid admin credentials.' });
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Invalid admin credentials.' }));
     }
 
     const token = jwt.sign(
@@ -35,7 +41,9 @@ router.post('/admin-login', async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    return res.json({ 
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ 
       success: true, 
       message: "Admin logged in successfully", 
       token,
@@ -47,10 +55,12 @@ router.post('/admin-login', async (req, res) => {
         enrollment: user.enrollment,
         name: user.name
       }
-    });
+    }));
   } catch (error) {
     console.error('Admin login error:', error.message, error.stack);
-    res.status(500).json({ success: false, error: 'Server error during login.' });
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ success: false, error: 'Server error during login.' }));
   }
 });
 
@@ -65,10 +75,12 @@ const cleanEnrollment = safeEnrollment ? String(safeEnrollment).toUpperCase().tr
 const cleanEmail = safeEmail ? String(safeEmail).toLowerCase().trim() : '';
 
     if (!cleanEnrollment.startsWith('ADT')) {
-        return res.status(400).json({
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({
             success: false,
             error: "Enrollment Number must start with 'ADT'."
-        });
+        }));
     }
 // Generate 4-digit code
 const otp = Math.floor(1000 + Math.random() * 9000).toString();
@@ -82,10 +94,12 @@ try {
     );
 } catch (error) {
     if (error.code === 11000) {
-        return res.status(400).json({
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({
             success: false,
             error: "This email is already registered to a different Enrollment Number."
-        });
+        }));
     }
     throw error;
 }
@@ -98,16 +112,20 @@ await transporter.sendMail({
     html: `<div style="text-align: center; padding: 20px; font-family: Arial;"><h2>Student Login</h2><p>Your 4-Digit Code is:</p><h1 style="color: #003366; letter-spacing: 5px;">${otp}</h1></div>`
 });
 // Return JSON success
-res.json({
+res.statusCode = 200;
+res.setHeader('Content-Type', 'application/json');
+return res.end(JSON.stringify({
   success: true,
   message: `Code sent to ${user.email}`,
   showOtpField: true,
   enrollmentNumber: cleanEnrollment,
   email: cleanEmail
-});
+}));
 } catch (err) {
 console.error(err);
-res.status(500).json({ success: false, error: "Server error sending code." });
+res.statusCode = 500;
+res.setHeader('Content-Type', 'application/json');
+return res.end(JSON.stringify({ success: false, error: "Server error sending code." }));
 }
 
 });
@@ -130,10 +148,12 @@ enrollment: cleanEnrollment, email: cleanEmail, role: 'student', otp: cleanOtp, 
 });
 
 if (!user) {
-    return res.status(400).json({
+    res.statusCode = 400;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({
         success: false,
         error: "Invalid or expired code. Please try again."
-    });
+    }));
 }
     // Success - Log in
     user.otp = null; user.otpExpires = null; await user.save();
@@ -144,7 +164,9 @@ if (!user) {
       { expiresIn: '1d' }
     );
 
-    return res.json({ 
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ 
       success: true, 
       message: "Student logged in successfully", 
       token,
@@ -156,10 +178,12 @@ if (!user) {
         enrollment: user.enrollment,
         name: user.name
       }
-    });
+    }));
 } catch (err) {
 console.error(err);
-res.status(500).json({ success: false, error: "Server error verifying code." });
+res.statusCode = 500;
+res.setHeader('Content-Type', 'application/json');
+return res.end(JSON.stringify({ success: false, error: "Server error verifying code." }));
 }
 
 });
@@ -172,7 +196,9 @@ router.get('/login', (req, res) => {
 // Logout
 router.post('/logout', (req, res) => {
   // Frontend handles clearing localStorage, backend just confirms
-  res.json({ success: true, message: 'Logged out successfully' });
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  return res.end(JSON.stringify({ success: true, message: 'Logged out successfully' }));
 });
 
 // Check session (JWT version)
@@ -180,15 +206,25 @@ router.get('/check', async (req, res) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) return res.json({ authenticated: false });
+  if (!token) {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ authenticated: false }));
+  }
 
   jwt.verify(token, process.env.SESSION_SECRET || 'fallback_secret', async (err, decoded) => {
-    if (err) return res.json({ authenticated: false });
+    if (err) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ authenticated: false }));
+    }
     
     try {
       const user = await User.findById(decoded.userId);
       if (user) {
-        return res.json({ 
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ 
           authenticated: true, 
           user: {
             id: user._id,
@@ -197,12 +233,14 @@ router.get('/check', async (req, res) => {
             enrollment: user.enrollment,
             name: user.name
           } 
-        });
+        }));
       }
     } catch (e) {
       console.error('JWT check DB error:', e);
     }
-    res.json({ authenticated: false });
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ authenticated: false }));
   });
 });
 

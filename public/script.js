@@ -206,15 +206,26 @@ async function submitComplaint(event) {
     return;
   }
 
+  const incidentDate = document.getElementById("incidentDate").value;
+  const studentName = document.getElementById("studentName").value;
+  const studentEnrollment = document.getElementById("studentEnrollment").value;
+  const studentEmail = document.getElementById("studentEmail").value;
+
   const formData = new FormData();
   formData.append('title', title);
   formData.append('category', category);
   formData.append('description', description);
-  formData.append('department', department);
-  formData.append('phone', phone);
+  formData.append('incidentDate', incidentDate);
+  formData.append('studentName', studentName);
+  formData.append('studentEnrollment', studentEnrollment);
+  formData.append('studentEmail', studentEmail);
+  formData.append('studentDept', department);
+  formData.append('studentPhone', phone);
   formData.append('expectedSolution', solutionText);
+  formData.append('docTitle', document.getElementById("docTitle").value);
+  
   if (docFile) {
-    formData.append('document', docFile);
+    formData.append('proof', docFile);
   }
 
   try {
@@ -241,9 +252,13 @@ async function loadComplaints() {
 
   try {
     const result = await api.getComplaints();
-    if (!result.success) return;
+    // Task 2: Safety net to prevent the TypeError crash
+    if (!result || !result.complaints || !Array.isArray(result.complaints)) {
+      console.error("Invalid complaints data received:", result);
+      return; // Safely exit without crashing the rest of the page
+    }
 
-    const complaints = result.data;
+    const complaints = result.complaints;
     table.innerHTML = "";
 
     if (complaints.length === 0) {
@@ -304,9 +319,13 @@ async function deleteComplaint(id) {
 async function updateStudentStats() {
   try {
     const result = await api.getComplaints();
-    if (!result.success) return;
+    // Task 2: Safety net
+    if (!result || !result.complaints || !Array.isArray(result.complaints)) {
+      console.error("Invalid stats data received:", result);
+      return;
+    }
 
-    const complaints = result.data;
+    const complaints = result.complaints;
     const total = complaints.length;
     const pending = complaints.filter(c => c.status === "Pending" || c.status === "In Progress").length;
     const resolved = complaints.filter(c => c.status === "Resolved").length;
@@ -356,9 +375,13 @@ async function loadAdminComplaints() {
 
   try {
     const result = await api.getComplaints();
-    if (!result.success) return;
+    // Task 2: Safety net
+    if (!result || !result.complaints || !Array.isArray(result.complaints)) {
+      console.error("Invalid admin complaints data received:", result);
+      return;
+    }
 
-    const complaints = result.data;
+    const complaints = result.complaints;
     table.innerHTML = "";
 
     if (complaints.length === 0) {
@@ -415,9 +438,13 @@ async function updateStatus(id, newStatus) {
 async function updateAdminStats() {
   try {
     const result = await api.getComplaints();
-    if (!result.success) return;
+    // Task 2: Safety net
+    if (!result || !result.complaints || !Array.isArray(result.complaints)) {
+      console.error("Invalid admin stats data received:", result);
+      return;
+    }
 
-    const complaints = result.data;
+    const complaints = result.complaints;
     const total = complaints.length;
     const pending = complaints.filter(c => c.status === "Pending").length;
     const inProgress = complaints.filter(c => c.status === "In Progress").length;
@@ -443,9 +470,13 @@ async function updateAdminStats() {
 async function updateCategoryStats() {
   try {
     const result = await api.getComplaints();
-    if (!result.success) return;
+    // Task 2: Safety net
+    if (!result || !result.complaints || !Array.isArray(result.complaints)) {
+      console.error("Invalid category stats data received:", result);
+      return;
+    }
 
-    const complaints = result.data;
+    const complaints = result.complaints;
     const categoryContainer = document.getElementById("categoryStats");
     if (!categoryContainer) return;
 
@@ -498,6 +529,54 @@ function filterAdminComplaints() {
   });
 }
 
+// ========== MODAL FUNCTIONS ==========
+async function viewComplaint(id) {
+  const modal = document.getElementById("grievanceModal");
+  const content = document.getElementById("modalContent");
+  if (!modal || !content) return;
+
+  try {
+    const result = await api.getComplaint(id);
+    if (!result.success) {
+      alert(result.error || 'Failed to fetch details');
+      return;
+    }
+
+    const c = result.complaint;
+    content.innerHTML = `
+      <div class="modal-detail">
+        <p><strong>Tracking ID:</strong> ${c.trackingID}</p>
+        <p><strong>Status:</strong> <span class="status ${c.status.toLowerCase()}">${c.status}</span></p>
+        <p><strong>Category:</strong> ${c.category}</p>
+        <p><strong>Incident Date:</strong> ${new Date(c.incidentDate || c.createdAt).toLocaleDateString()}</p>
+        <hr>
+        <p><strong>Description:</strong></p>
+        <div class="modal-text">${c.description}</div>
+        ${c.docPath ? `<p><strong>Attachment:</strong> <a href="${c.docPath}" target="_blank">View Document</a></p>` : ''}
+        <hr>
+        <p><strong>Submitted On:</strong> ${formatDate(c.createdAt)}</p>
+      </div>
+    `;
+    modal.style.display = "block";
+  } catch (error) {
+    console.error('View error:', error);
+    alert('Failed to load grievance details');
+  }
+}
+
+function closeModal() {
+  const modal = document.getElementById("grievanceModal");
+  if (modal) modal.style.display = "none";
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+  const modal = document.getElementById("grievanceModal");
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+}
+
 // ========== PAGE Load INITIALIZATION ==========
 window.onload = async function () {
   // Check which page we're on and initialize accordingly
@@ -512,3 +591,4 @@ window.onload = async function () {
     }
   }
 };
+

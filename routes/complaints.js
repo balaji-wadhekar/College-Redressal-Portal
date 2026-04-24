@@ -18,10 +18,18 @@ const isAuthenticated = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+  if (!token) {
+    res.statusCode = 401;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ success: false, error: 'Not authenticated' }));
+  }
 
   jwt.verify(token, process.env.SESSION_SECRET || 'fallback_secret', (err, decoded) => {
-    if (err) return res.status(403).json({ error: 'Forbidden' });
+    if (err) {
+      res.statusCode = 403;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Forbidden' }));
+    }
     req.user = decoded;
     next();
   });
@@ -32,18 +40,27 @@ router.get('/', isAuthenticated, async (req, res) => {
   try {
     let query = {};
     if (req.user.role === 'student') {
+      // Use the studentId from the decoded JWT payload
       query.studentId = req.user.userId;
     }
 
     const complaints = await Complaint.find(query).sort({ createdAt: -1 });
 
-    res.json({
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({
       success: true,
       complaints
-    });
+    }));
   } catch (error) {
     console.error('Get complaints error:', error);
-    res.status(500).json({ error: 'Failed to fetch complaints' });
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ 
+      success: false, 
+      message: "Server error", 
+      complaints: [] 
+    }));
   }
 });
 
@@ -53,25 +70,35 @@ router.get('/:id', isAuthenticated, async (req, res) => {
     const complaint = await Complaint.findById(req.params.id);
 
     if (!complaint) {
-      return res.status(404).json({ error: 'Complaint not found' });
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Complaint not found' }));
     }
 
     if (req.user.role !== 'admin' && complaint.studentId.toString() !== req.user.userId) {
-      return res.status(403).json({ error: 'Access denied' });
+      res.statusCode = 403;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Access denied' }));
     }
 
-    res.json({ success: true, complaint });
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ success: true, complaint }));
   } catch (error) {
     console.error('Get complaint error:', error);
-    res.status(500).json({ error: 'Failed to fetch complaint' });
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ success: false, error: 'Failed to fetch complaint' }));
   }
 });
 
 // Create new complaint (student only)
-router.post('/', isAuthenticated, upload.single('docFile'), async (req, res) => {
+router.post('/', isAuthenticated, upload.single('proof'), async (req, res) => {
   try {
     if (req.user.role !== 'student') {
-      return res.status(403).json({ error: 'Only students can file complaints' });
+      res.statusCode = 403;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Only students can file complaints' }));
     }
 
     const {
@@ -80,26 +107,33 @@ router.post('/', isAuthenticated, upload.single('docFile'), async (req, res) => 
       docTitle
     } = req.body;
 
-    if (!title || !category || !description) {
-      return res.status(400).json({ error: 'Title, Category, and Description are required to submit a grievance.' });
+    if (!title || !category || !description || !incidentDate) {
+      res.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'All mandatory fields (Title, Category, Description, Date) are required.' }));
     }
 
     // Generate unique trackingID
-    const randomString = require('crypto').randomBytes(3).toString('hex').toUpperCase();
+    const crypto = require('crypto');
+    const randomString = crypto.randomBytes(3).toString('hex').toUpperCase();
     const trackingID = `GRV-${randomString}`;
 
-    // Upload file to Cloudinary if provided
+    // Task 3: Cloudinary upload logic using upload_stream (Promise-wrapped)
     let docPath = null;
     let docPublicId = null;
+
     if (req.file) {
-      try {
-        const result = await uploadToCloudinary(req.file.buffer, 'grievance-portal/docs', req.file.originalname);
-        docPath = result.secure_url;       // Cloudinary HTTPS URL
-        docPublicId = result.public_id;    // For future deletion if needed
-      } catch (uploadErr) {
-        console.error('Cloudinary upload error:', uploadErr);
-        // Continue without attachment rather than failing the whole submission
-      }
+      const { cloudinary } = require('../config/cloudinary');
+      docPath = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'grievance-portal/docs', resource_type: 'auto' },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
     }
 
     const complaint = new Complaint({
@@ -152,7 +186,6 @@ router.post('/', isAuthenticated, upload.single('docFile'), async (req, res) => 
     if (docPath) {
       const isImage = req.file && /\.(jpg|jpeg|png|gif|webp)$/i.test(req.file.originalname);
       if (isImage) {
-        // Use the Cloudinary URL directly in the email — no CID needed
         documentHTML = `
           <h3 style="color: #374151; margin-top: 0; border-bottom: 2px solid #d1d5db; padding-bottom: 5px;">3. Attached Evidence</h3>
           <div style="background-color: #f3f4f6; padding: 10px; text-align: center; border-radius: 5px;">
@@ -191,27 +224,34 @@ router.post('/', isAuthenticated, upload.single('docFile'), async (req, res) => 
     </div>`;
 
     try {
+      const { transporter } = require('../utils/emailService');
       await transporter.sendMail({
         from: '"MIT Grievance Portal" <no-reply@college.edu>',
         to: targetAdminEmail,
         subject: `[${category}] ${title || 'New Grievance'} - ${req.user ? req.user.enrollment : ''}`,
         html: emailHTML
-        // No attachments needed — images are embedded via Cloudinary URLs
       });
       console.log(`✅ Routed email to: ${targetAdminEmail}`);
     } catch (mailError) {
       console.error('⚠️ Email routing failed:', mailError);
     }
 
-    res.status(201).json({
+    res.statusCode = 201;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({
       success: true,
       message: 'Complaint submitted successfully',
       complaint
-    });
+    }));
 
   } catch (error) {
-    console.error('Create complaint error:', error);
-    res.status(500).json({ error: 'Failed to create complaint' });
+    console.error('SUBMISSION CRASH:', error);
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }));
   }
 });
 
@@ -219,13 +259,17 @@ router.post('/', isAuthenticated, upload.single('docFile'), async (req, res) => 
 router.patch('/:id/status', isAuthenticated, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Only admins can update status' });
+      res.statusCode = 403;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Only admins can update status' }));
     }
 
     const { status } = req.body;
 
     if (!status || !['Pending', 'In Progress', 'Resolved'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
+      res.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Invalid status' }));
     }
 
     const complaint = await Complaint.findByIdAndUpdate(
@@ -235,7 +279,9 @@ router.patch('/:id/status', isAuthenticated, async (req, res) => {
     );
 
     if (!complaint) {
-      return res.status(404).json({ error: 'Complaint not found' });
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Complaint not found' }));
     }
 
     console.log('--- DEBUG EMAIL TRIGGER ---');
@@ -256,15 +302,19 @@ router.patch('/:id/status', isAuthenticated, async (req, res) => {
       }
     }
 
-    res.json({
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({
       success: true,
       message: `Complaint marked as ${status}`,
       complaint
-    });
+    }));
 
   } catch (error) {
     console.error('Update status error:', error);
-    res.status(500).json({ error: 'Failed to update status' });
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ success: false, error: 'Failed to update status' }));
   }
 });
 
@@ -272,21 +322,29 @@ router.patch('/:id/status', isAuthenticated, async (req, res) => {
 router.put('/:id', isAuthenticated, upload.single('docFile'), async (req, res) => {
   try {
     if (req.user.role !== 'student') {
-      return res.status(403).json({ error: 'Only students can edit complaints' });
+      res.statusCode = 403;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Only students can edit complaints' }));
     }
 
     const complaint = await Complaint.findById(req.params.id);
 
     if (!complaint) {
-      return res.status(404).json({ error: 'Complaint not found' });
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Complaint not found' }));
     }
 
     if (complaint.studentId.toString() !== req.user.userId) {
-      return res.status(403).json({ error: 'Access denied' });
+      res.statusCode = 403;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Access denied' }));
     }
 
     if (complaint.status !== 'Pending') {
-      return res.status(400).json({ error: 'Only pending complaints can be edited' });
+      res.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Only pending complaints can be edited' }));
     }
 
     const { title, category, description } = req.body;
@@ -387,15 +445,19 @@ router.put('/:id', isAuthenticated, upload.single('docFile'), async (req, res) =
       console.error('⚠️ Email routing failed on edit:', mailError);
     }
 
-    res.json({
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({
       success: true,
       message: 'Complaint updated successfully',
       complaint
-    });
+    }));
 
   } catch (error) {
     console.error('Update complaint error:', error);
-    res.status(500).json({ error: 'Failed to update complaint' });
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ success: false, error: 'Failed to update complaint' }));
   }
 });
 
@@ -405,30 +467,41 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
     const complaint = await Complaint.findById(req.params.id);
 
     if (!complaint) {
-      return res.status(404).json({ error: 'Complaint not found' });
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Complaint not found' }));
     }
 
     if (req.user.role !== 'admin' &&
       complaint.studentEmail !== req.user.email) {
-      return res.status(403).json({ error: 'Access denied' });
+      res.statusCode = 403;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Access denied' }));
     }
 
     if (complaint.status !== 'Pending') {
-      return res.status(400).json({
+      res.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({
+        success: false,
         error: 'Only pending complaints can be deleted'
-      });
+      }));
     }
 
     await Complaint.findByIdAndDelete(req.params.id);
 
-    res.json({
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({
       success: true,
       message: 'Complaint deleted successfully'
-    });
+    }));
 
   } catch (error) {
     console.error('Delete complaint error:', error);
-    res.status(500).json({ error: 'Failed to delete complaint' });
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ success: false, error: 'Failed to delete complaint' }));
   }
 });
 
@@ -455,15 +528,19 @@ router.get('/stats/summary', isAuthenticated, async (req, res) => {
       categoryBreakdown[c.category] = (categoryBreakdown[c.category] || 0) + 1;
     });
 
-    res.json({
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({
       success: true,
       stats,
       categoryBreakdown
-    });
+    }));
 
   } catch (error) {
     console.error('Get stats error:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ success: false, error: 'Failed to fetch statistics' }));
   }
 });
 

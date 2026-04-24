@@ -102,10 +102,6 @@ const seedDatabase = async () => {
     await Complaint.insertMany(sampleComplaints);
     console.log('✅ Created sample complaints');
 
-    console.log('\n🎉 Database seeded successfully!');
-    console.log('\n📝 NEW ADMIN CREDENTIALS:');
-    console.log('   Email: admin@gmail.com');
-    console.log('   Password: ' + newAdminPassword);
 
     process.exit(0);
 

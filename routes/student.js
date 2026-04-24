@@ -11,17 +11,43 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } 
 });
 
+// Middleware to check if user is authenticated (Native JWT)
+const jwt = require('jsonwebtoken');
+const isAuthenticated = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    res.statusCode = 401;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ success: false, error: 'Not authenticated' }));
+  }
+
+  jwt.verify(token, process.env.SESSION_SECRET || 'fallback_secret', (err, decoded) => {
+    if (err) {
+      res.statusCode = 403;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ success: false, error: 'Forbidden' }));
+    }
+    req.user = decoded;
+    next();
+  });
+};
+
 // Dashboard
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', isAuthenticated, async (req, res) => {
   try {
     let query = {};
-    if (req.session && req.session.user) {
-        query.studentEmail = req.session.user.email;
+    if (req.user) {
+        query.studentEmail = req.user.email;
     }
     const grievances = await Grievance.find(query);
+    
+    // If still using EJS for this old route
     res.render('student/dashboard', { grievances });
   } catch (error) {
-    res.status(500).send("Error loading dashboard");
+    res.statusCode = 500;
+    res.end("Error loading dashboard");
   }
 });
 
